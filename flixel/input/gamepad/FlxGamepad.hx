@@ -21,8 +21,8 @@ import flixel.math.FlxPoint;
 import flixel.util.FlxDestroyUtil;
 import flixel.util.FlxStringUtil;
 #if FLX_GAMEINPUT_API
-import openfl.ui.GameInputControl;
-import openfl.ui.GameInputDevice;
+import flash.ui.GameInputControl;
+import flash.ui.GameInputDevice;
 import flixel.math.FlxMath;
 #elseif FLX_JOYSTICK_API
 import flixel.math.FlxPoint;
@@ -449,11 +449,7 @@ class FlxGamepad implements IFlxDestroyable
 	 */
 	public inline function firstPressedID():FlxGamepadInputID
 	{
-		var id = firstPressedRawID();
-		if (id < 0)
-			return id;
-
-		return mapping.getID(id);
+		return mapping.getID(firstPressedRawID());
 	}
 
 	/**
@@ -464,7 +460,7 @@ class FlxGamepad implements IFlxDestroyable
 	{
 		for (button in buttons)
 		{
-			if (button != null && button.pressed)
+			if (button != null && button.released)
 			{
 				return button.ID;
 			}
@@ -478,11 +474,7 @@ class FlxGamepad implements IFlxDestroyable
 	 */
 	public inline function firstJustPressedID():FlxGamepadInputID
 	{
-		var id = firstJustPressedRawID();
-		if (id < 0)
-			return id;
-
-		return mapping.getID(id);
+		return mapping.getID(firstJustPressedRawID());
 	}
 
 	/**
@@ -507,11 +499,7 @@ class FlxGamepad implements IFlxDestroyable
 	 */
 	public inline function firstJustReleasedID():FlxGamepadInputID
 	{
-		var id = firstJustReleasedRawID();
-		if (id < 0)
-			return id;
-
-		return mapping.getID(id);
+		return mapping.getID(firstJustReleasedRawID());
 	}
 
 	/**

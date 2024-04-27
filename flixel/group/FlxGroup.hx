@@ -7,59 +7,68 @@ import flixel.util.FlxArrayUtil;
 import flixel.util.FlxDestroyUtil;
 import flixel.util.FlxSignal.FlxTypedSignal;
 import flixel.util.FlxSort;
+#if (haxe_ver >= 4.2)
+import Std.isOfType;
+#else
+import Std.is as isOfType;
+#end
 
-/**
- * Contains a bunch of `FlxBasic`s for vaious organizational purposes, namely
- * collision, updating and drawing.
- * 
- * ## Collision
- * When used as an arg in `FlxG.collide` or `FlxG.overlap`, groups will use quadtrees to
- * greatly reduce the number of overlap checks, resulting in much better peformance compared
- * to having individual overlap checks on each pair of objects.
- * 
- * ## Drawing and Updating
- * Calling `update` or `draw` on a group will call `update` or `draw` on each member. Typically,
- * to update or draw a group you add it to the state, or to a group that was added to the state,
- * this way, the state will update and draw it's members based on the desired framerates.
- * 
- * ## FlxContainers
- * Though objects can be in various organizational groups, it's highly recommended that they only
- * get drawn or updated by one containing group. For this reason `FlxContainer` was made, objects
- * can only be in one `FlxContainer` at a time, adding them to a second will remove them from
- * their previous container, but not from any group.
- */
 typedef FlxGroup = FlxTypedGroup<FlxBasic>;
 
 /**
- * A `FlxGroup` that only allows specific members to be a specific type of `FlxBasic`.
- * To use any kind of `FlxBasic` use `FlxGroup`, which is an alias for `FlxTypedGroup<FlxBasic>`.
+ * This is an organizational class that can update and render a bunch of `FlxBasic`s.
+ * NOTE: Although `FlxGroup` extends `FlxBasic`, it will not automatically
+ * add itself to the global collisions quad tree, it will only add its members.
  */
 class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 {
+	/**
+	 * Helper for overlap functions in `FlxObject` and `FlxTilemap`.
+	 */
 	@:noCompletion
-	static function resolveGroup(basic:FlxBasic):FlxTypedGroup<FlxBasic>
+	static function overlaps(Callback:FlxBasic->Float->Float->Bool->FlxCamera->Bool, Group:FlxTypedGroup<FlxBasic>, X:Float, Y:Float, InScreenSpace:Bool,
+			Camera:FlxCamera):Bool
 	{
-		if (basic != null)
+		var result:Bool = false;
+		if (Group != null)
 		{
-			if (basic.flixelType == GROUP)
+			var i = 0;
+			var l = Group.length;
+			var basic:FlxBasic;
+
+			while (i < l)
 			{
-				return cast basic;
-			}
-			else if (basic.flixelType == SPRITEGROUP)
-			{
-				return cast (cast basic:FlxTypedSpriteGroup<Dynamic>).group;
+				basic = cast Group.members[i++];
+
+				if (basic != null && Callback(basic, X, Y, InScreenSpace, Camera))
+				{
+					result = true;
+					break;
+				}
 			}
 		}
-		return null;
+		return result;
 	}
-	
+
 	@:noCompletion
-	@:allow(flixel.system.debug.interaction.Interaction)
-	static inline function resolveSelectionGroup(basic:FlxBasic)
+	static function resolveGroup(ObjectOrGroup:FlxBasic):FlxTypedGroup<FlxBasic>
 	{
-		return resolveGroup(basic);
+		var group:FlxTypedGroup<FlxBasic> = null;
+		if (ObjectOrGroup != null)
+		{
+			if (ObjectOrGroup.flixelType == GROUP)
+			{
+				group = cast ObjectOrGroup;
+			}
+			else if (ObjectOrGroup.flixelType == SPRITEGROUP)
+			{
+				var spriteGroup:FlxTypedSpriteGroup<Dynamic> = cast ObjectOrGroup;
+				group = cast spriteGroup.group;
+			}
+		}
+		return group;
 	}
-	
+
 	/**
 	 * `Array` of all the members in this group.
 	 */
@@ -128,23 +137,23 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	override public function destroy():Void
 	{
 		super.destroy();
-		
+
 		FlxDestroyUtil.destroy(_memberAdded);
 		FlxDestroyUtil.destroy(_memberRemoved);
-		
+
 		if (members != null)
 		{
-			/* Note: basic.destroy() will remove it from it's container, which may be this group.
-			 * So we need to make sure this loop can handle deletions
-			 */
-			var count = length;
-			while (count-- > 0)
+			var i:Int = 0;
+			var basic:FlxBasic = null;
+
+			while (i < length)
 			{
-				final basic = members.shift();
+				basic = members[i++];
+
 				if (basic != null)
 					basic.destroy();
 			}
-			
+
 			members = null;
 		}
 	}
@@ -154,8 +163,13 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 */
 	override public function update(elapsed:Float):Void
 	{
-		for (basic in members)
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
 		{
+			basic = members[i++];
+
 			if (basic != null && basic.exists && basic.active)
 			{
 				basic.update(elapsed);
@@ -168,16 +182,23 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 */
 	override public function draw():Void
 	{
-		final oldDefaultCameras = FlxCamera._defaultCameras;
-		if (_cameras != null)
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		var oldDefaultCameras = FlxCamera._defaultCameras;
+		if (cameras != null)
 		{
-			FlxCamera._defaultCameras = _cameras;
+			FlxCamera._defaultCameras = cameras;
 		}
 
-		for (basic in members)
+		while (i < length)
 		{
+			basic = members[i++];
+
 			if (basic != null && basic.exists && basic.visible)
+			{
 				basic.draw();
+			}
 		}
 
 		FlxCamera._defaultCameras = oldDefaultCameras;
@@ -190,47 +211,50 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 * WARNING: If the group has a `maxSize` that has already been met,
 	 * the object will NOT be added to the group!
 	 *
-	 * @param   basic  The `FlxBasic` you want to add to the group.
+	 * @param   Object   The object you want to add to the group.
 	 * @return  The same `FlxBasic` object that was passed in.
 	 */
-	public function add(basic:T):T
+	public function add(Object:T):T
 	{
-		if (basic == null)
+		if (Object == null)
 		{
 			FlxG.log.warn("Cannot add a `null` object to a FlxGroup.");
 			return null;
 		}
 
 		// Don't bother adding an object twice.
-		if (members.indexOf(basic) >= 0)
-			return basic;
+		if (members.indexOf(Object) >= 0)
+			return Object;
 
 		// First, look for a null entry where we can add the object.
-		final index:Int = getFirstNull();
+		var index:Int = getFirstNull();
 		if (index != -1)
 		{
-			members[index] = basic;
+			members[index] = Object;
 
 			if (index >= length)
 			{
 				length = index + 1;
 			}
-			
-			onMemberAdd(basic);
-			
-			return basic;
+
+			if (_memberAdded != null)
+				_memberAdded.dispatch(Object);
+
+			return Object;
 		}
 
-		// If the group is full, return the basic
+		// If the group is full, return the Object
 		if (maxSize > 0 && length >= maxSize)
-			return basic;
+			return Object;
 
-		// If we made it this far, we need to add the basic to the group.
-		members.push(basic);
+		// If we made it this far, we need to add the object to the group.
+		members.push(Object);
 		length++;
-		onMemberAdd(basic);
-		
-		return basic;
+
+		if (_memberAdded != null)
+			_memberAdded.dispatch(Object);
+
+		return Object;
 	}
 
 	/**
@@ -241,8 +265,8 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 * WARNING: If the group has a `maxSize` that has already been met,
 	 * the object will NOT be inserted to the group!
 	 *
-	 * @param   position  The position in the group where you want to insert the object.
-	 * @param   object    The object you want to insert into the group.
+	 * @param   Position   The position in the group where you want to insert the object.
+	 * @param   Object     The object you want to insert into the group.
 	 * @return  The same `FlxBasic` object that was passed in.
 	 */
 	public function insert(position:Int, object:T):T
@@ -261,8 +285,10 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 		if (position < length && members[position] == null)
 		{
 			members[position] = object;
-			onMemberAdd(object);
-			
+
+			if (_memberAdded != null)
+				_memberAdded.dispatch(object);
+
 			return object;
 		}
 
@@ -273,7 +299,9 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 		// If we made it this far, we need to insert the object into the group at the specified position.
 		members.insert(position, object);
 		length++;
-		onMemberAdd(object);
+
+		if (_memberAdded != null)
+			_memberAdded.dispatch(object);
 
 		return object;
 	}
@@ -293,112 +321,125 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 * WARNING: If this function needs to create a new object, and no object class was provided,
 	 * it will return `null` instead of a valid object!
 	 *
-	 * @param   objectClass    The class type you want to recycle (e.g. `FlxSprite`, `EvilRobot`, etc).
-	 * @param   objectFactory  Optional factory function to create a new object
-	 *                         if there aren't any dead members to recycle.
-	 *                         If `null`, `Type.createInstance()` is used,
-	 *                         which requires the class to have no constructor parameters.
-	 * @param   force          Force the object to be an `ObjectClass` and not a super class of `ObjectClass`.
-	 * @param   revive         Whether recycled members should automatically be revived
-	 *                         (by calling `revive()` on them).
+	 * @param   ObjectClass     The class type you want to recycle (e.g. `FlxSprite`, `EvilRobot`, etc).
+	 * @param   ObjectFactory   Optional factory function to create a new object
+	 *                          if there aren't any dead members to recycle.
+	 *                          If `null`, `Type.createInstance()` is used,
+	 *                          which requires the class to have no constructor parameters.
+	 * @param   Force           Force the object to be an `ObjectClass` and not a super class of `ObjectClass`.
+	 * @param   Revive          Whether recycled members should automatically be revived
+	 *                          (by calling `revive()` on them).
 	 * @return  A reference to the object that was created.
 	 */
-	public function recycle(?objectClass:Class<T>, ?objectFactory:Void->T, force = false, revive = true):T
+	public function recycle(?ObjectClass:Class<T>, ?ObjectFactory:Void->T, Force:Bool = false, Revive:Bool = true):T
 	{
-		inline function createObject():T
-		{
-			if (objectFactory != null)
-				return add(objectFactory());
-			
-			if (objectClass != null)
-				return add(Type.createInstance(objectClass, []));
-			
-			return null;
-		}
-		
+		var basic:FlxBasic = null;
+
 		// rotated recycling
 		if (maxSize > 0)
 		{
 			// create new instance
 			if (length < maxSize)
-				return createObject();
-			
+			{
+				return recycleCreateObject(ObjectClass, ObjectFactory);
+			}
 			// get the next member if at capacity
-			final basic = members[_marker++];
+			else
+			{
+				basic = members[_marker++];
 
-			if (_marker >= maxSize)
-				_marker = 0;
+				if (_marker >= maxSize)
+					_marker = 0;
 
-			if (revive)
-				basic.revive();
+				if (Revive)
+					basic.revive();
 
-			return cast basic;
+				return cast basic;
+			}
 		}
-		
 		// grow-style recycling - grab a basic with exists == false or create a new one
-		final basic = getFirstAvailable(objectClass, force);
-
-		if (basic != null)
+		else
 		{
-			if (revive)
-				basic.revive();
-			return cast basic;
-		}
+			basic = getFirstAvailable(ObjectClass, Force);
 
-		return createObject();
+			if (basic != null)
+			{
+				if (Revive)
+					basic.revive();
+				return cast basic;
+			}
+
+			return recycleCreateObject(ObjectClass, ObjectFactory);
+		}
+	}
+
+	@:noCompletion
+	inline function recycleCreateObject(?ObjectClass:Class<T>, ?ObjectFactory:Void->T):T
+	{
+		var object:T = null;
+
+		if (ObjectFactory != null)
+			add(object = ObjectFactory());
+		else if (ObjectClass != null)
+			add(object = Type.createInstance(ObjectClass, []));
+
+		return object;
 	}
 
 	/**
 	 * Removes an object from the group.
 	 *
-	 * @param   basic   The `FlxBasic` you want to remove.
-	 * @param   splice  Whether the object should be cut from the array entirely or not.
+	 * @param   Object   The `FlxBasic` you want to remove.
+	 * @param   Splice   Whether the object should be cut from the array entirely or not.
 	 * @return  The removed object.
 	 */
-	public function remove(basic:T, splice = false):T
+	public function remove(Object:T, Splice:Bool = false):T
 	{
 		if (members == null)
 			return null;
 
-		final index = members.indexOf(basic);
+		var index:Int = members.indexOf(Object);
 
 		if (index < 0)
 			return null;
 
-		if (splice)
+		if (Splice)
 		{
 			members.splice(index, 1);
 			length--;
 		}
 		else
 			members[index] = null;
-		
-		onMemberRemove(basic);
-		
-		return basic;
+
+		if (_memberRemoved != null)
+			_memberRemoved.dispatch(Object);
+
+		return Object;
 	}
 
 	/**
 	 * Replaces an existing `FlxBasic` with a new one.
 	 * Does not do anything and returns `null` if the old object is not part of the group.
 	 *
-	 * @param   oldObject  The object you want to replace.
-	 * @param   newObject  The new object you want to use instead.
+	 * @param   OldObject   The object you want to replace.
+	 * @param   NewObject   The new object you want to use instead.
 	 * @return  The new object.
 	 */
-	public function replace(oldObject:T, newObject:T):T
+	public function replace(OldObject:T, NewObject:T):T
 	{
-		final index = members.indexOf(oldObject);
+		var index:Int = members.indexOf(OldObject);
 
 		if (index < 0)
 			return null;
 
-		members[index] = newObject;
+		members[index] = NewObject;
 
-		onMemberRemove(oldObject);
-		onMemberAdd(newObject);
+		if (_memberRemoved != null)
+			_memberRemoved.dispatch(OldObject);
+		if (_memberAdded != null)
+			_memberAdded.dispatch(NewObject);
 
-		return newObject;
+		return NewObject;
 	}
 
 	/**
@@ -406,151 +447,41 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 * For example, to sort game objects for Zelda-style overlaps you might call
 	 * `group.sort(FlxSort.byY, FlxSort.ASCENDING)` at the bottom of your `FlxState#update()` override.
 	 *
-	 * @param   func   The sorting function to use - you can use one of the premade ones in
+	 * @param   Function   The sorting function to use - you can use one of the premade ones in
 	 *                     `FlxSort` or write your own using `FlxSort.byValues()` as a "backend".
-	 * @param   order  A constant that defines the sort order.
+	 * @param   Order      A constant that defines the sort order.
 	 *                     Possible values are `FlxSort.ASCENDING` (default) and `FlxSort.DESCENDING`.
 	 */
-	public inline function sort(func:(Int,T,T)->Int, order = FlxSort.ASCENDING):Void
+	public inline function sort(Function:Int->T->T->Int, Order:Int = FlxSort.ASCENDING):Void
 	{
-		members.sort(func.bind(order));
+		members.sort(Function.bind(Order));
 	}
-	
-	/**
-	 * Searches for, and returns the first member that satisfies the function.
-	 * @param   func  The function that tests the members
-	 * @since 5.4.0
-	 */
-	public function getFirst(func:T->Bool):Null<T>
-	{
-		return getFirstHelper(func);
-	}
-	
-	inline function getFirstHelper(func:T->Bool):Null<T>
-	{
-		var result:T = null;
-		for (basic in members)
-		{
-			if (basic != null && func(basic))
-			{
-				result = basic;
-				break;
-			}
-		}
-		return result;
-	}
-	
-	/**
-	 * Searches for, and returns the last member that satisfies the function.
-	 * @param   func  The function that tests the members
-	 * @since 5.4.0
-	 */
-	public function getLast(func:T->Bool):Null<T>
-	{
-		var result:T = null;
-		var i = members.length;
-		while (i-- > 0)
-		{
-			final basic = members[i];
-			if (basic != null && func(basic))
-			{
-				result = basic;
-				break;
-			}
-		}
-		return result;
-	}
-	
-	/**
-	 * Searches for, and returns the index of the first member that satisfies the function.
-	 * @param   func  The function that tests the members
-	 * @since 5.4.0
-	 */
-	public function getFirstIndex(func:T->Bool):Int
-	{
-		var result = -1;
-		for (i=>basic in members)
-		{
-			if (basic != null && func(basic))
-			{
-				result = i;
-				break;
-			}
-		}
-		return result;
-	}
-	
-	/**
-	 * Searches for, and returns the index of the last member that satisfies the function.
-	 * @param   func  The function that tests the members
-	 * @since 5.4.0
-	 */
-	public function getLastIndex(func:T->Bool):Int
-	{
-		var result = -1;
-		var i = members.length;
-		while (i-- > 0)
-		{
-			final basic = members[i];
-			if (basic != null && func(basic))
-			{
-				result = i;
-				break;
-			}
-		}
-		return result;
-	}
-	
-	/**
-	 * Tests whether any member satisfies the function.
-	 * @param   func  The function that tests the members
-	 * @since 5.4.0
-	 */
-	public function any(func:T->Bool):Bool
-	{
-		for (basic in members)
-		{
-			if (basic != null && func(basic))
-				return true;
-		}
-		return false;
-	}
-	
-	/**
-	 * Tests whether every member satisfies the function.
-	 * @param   func  The function that tests the members
-	 * @since 5.4.0
-	 */
-	public function every(func:T->Bool):Bool
-	{
-		for (basic in members)
-		{
-			if (basic != null && !func(basic))
-				return false;
-		}
-		return true;
-	}
-	
+
 	/**
 	 * Call this function to retrieve the first object with `exists == false` in the group.
 	 * This is handy for recycling in general, e.g. respawning enemies.
 	 *
-	 * @param   objectClass  An optional parameter that lets you narrow the
-	 *                       results to instances of this particular class.
-	 * @param   force        Force the object to be an `ObjectClass` and not a super class of `ObjectClass`.
+	 * @param   ObjectClass   An optional parameter that lets you narrow the
+	 *                        results to instances of this particular class.
+	 * @param   Force         Force the object to be an `ObjectClass` and not a super class of `ObjectClass`.
 	 * @return  A `FlxBasic` currently flagged as not existing.
 	 */
-	public function getFirstAvailable(?objectClass:Class<T>, force = false):Null<T>
+	public function getFirstAvailable(?ObjectClass:Class<T>, Force:Bool = false):T
 	{
-		for (basic in members)
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
 		{
-			if (basic != null && !basic.exists && (objectClass == null || Std.isOfType(basic, objectClass)))
+			basic = members[i++]; // we use basic as FlxBasic for performance reasons
+
+			if (basic != null && !basic.exists && (ObjectClass == null || isOfType(basic, ObjectClass)))
 			{
-				if (force && Type.getClassName(Type.getClass(basic)) != Type.getClassName(objectClass))
+				if (Force && Type.getClassName(Type.getClass(basic)) != Type.getClassName(ObjectClass))
 				{
 					continue;
 				}
-				return basic;
+				return members[i - 1];
 			}
 		}
 
@@ -565,7 +496,16 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 */
 	public function getFirstNull():Int
 	{
-		return members.indexOf(null);
+		var i:Int = 0;
+
+		while (i < length)
+		{
+			if (members[i] == null)
+				return i;
+			i++;
+		}
+
+		return -1;
 	}
 
 	/**
@@ -574,9 +514,20 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 *
 	 * @return  A `FlxBasic` currently flagged as existing.
 	 */
-	public function getFirstExisting():Null<T>
+	public function getFirstExisting():T
 	{
-		return getFirstHelper((basic)->basic.exists);
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
+		{
+			basic = members[i++];
+
+			if (basic != null && basic.exists)
+				return cast basic;
+		}
+
+		return null;
 	}
 
 	/**
@@ -585,9 +536,20 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 *
 	 * @return  A `FlxBasic` currently flagged as not dead.
 	 */
-	public function getFirstAlive():Null<T>
+	public function getFirstAlive():T
 	{
-		return getFirstHelper((basic)->basic.exists && basic.alive);
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
+		{
+			basic = members[i++]; // we use basic as FlxBasic for performance reasons
+
+			if (basic != null && basic.exists && basic.alive)
+				return cast basic;
+		}
+
+		return null;
 	}
 
 	/**
@@ -596,11 +558,22 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 *
 	 * @return  A `FlxBasic` currently flagged as dead.
 	 */
-	public function getFirstDead():Null<T>
+	public function getFirstDead():T
 	{
-		return getFirstHelper((basic)->!basic.alive);
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
+		{
+			basic = members[i++]; // we use basic as FlxBasic for performance reasons
+
+			if (basic != null && !basic.alive)
+				return cast basic;
+		}
+
+		return null;
 	}
-	
+
 	/**
 	 * Call this function to find out how many members of the group are not dead.
 	 *
@@ -608,10 +581,14 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 */
 	public function countLiving():Int
 	{
+		var i:Int = 0;
 		var count:Int = -1;
+		var basic:FlxBasic = null;
 
-		for (basic in members)
+		while (i < length)
 		{
+			basic = members[i++];
+
 			if (basic != null)
 			{
 				if (count < 0)
@@ -631,10 +608,14 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	 */
 	public function countDead():Int
 	{
+		var i:Int = 0;
 		var count:Int = -1;
-		
-		for (basic in members)
+		var basic:FlxBasic = null;
+
+		while (i < length)
 		{
+			basic = members[i++];
+
 			if (basic != null)
 			{
 				if (count < 0)
@@ -646,23 +627,23 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 
 		return count;
 	}
-	
+
 	/**
 	 * Returns a member at random from the group.
 	 *
-	 * @param   startIndex  Optional offset off the front of the array.
+	 * @param   StartIndex  Optional offset off the front of the array.
 	 *                      Default value is `0`, or the beginning of the array.
-	 * @param   length      Optional restriction on the number of values you want to randomly select from.
+	 * @param   Length      Optional restriction on the number of values you want to randomly select from.
 	 * @return  A `FlxBasic` from the `members` list.
 	 */
-	public function getRandom(startIndex:Int = 0, length:Int = 0)
+	public function getRandom(StartIndex:Int = 0, Length:Int = 0):T
 	{
-		if (startIndex < 0)
-			startIndex = 0;
-		if (length <= 0)
-			length = this.length;
+		if (StartIndex < 0)
+			StartIndex = 0;
+		if (Length <= 0)
+			Length = length;
 
-		return FlxG.random.getObject(members, startIndex, length);
+		return FlxG.random.getObject(members, StartIndex, Length);
 	}
 
 	/**
@@ -676,55 +657,50 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 		if (_memberRemoved != null)
 		{
 			for (member in members)
-				onMemberRemove(member);
+			{
+				if (member != null)
+					_memberRemoved.dispatch(member);
+			}
 		}
 
 		FlxArrayUtil.clearArray(members);
 	}
 
 	/**
-	 * Calls `kill()` on the group's unkilled `members`. Revive them via `reviveMembers()`.
-	 * @since 5.4.0
-	 */
-	public function killMembers():Void
-	{
-		for (basic in members)
-		{
-			if (basic != null && basic.exists)
-				basic.kill();
-		}
-	}
-
-	/**
-	 * Calls `killMembers()` and then kills the group itself.
-	 * Revive this group via `revive()`.
+	 * Calls `kill()` on the group's `members` and then on the group itself.
+	 * You can revive this group later via `revive()` after this.
 	 */
 	override public function kill():Void
 	{
-		killMembers();
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
+		{
+			basic = members[i++];
+
+			if (basic != null && basic.exists)
+				basic.kill();
+		}
 
 		super.kill();
 	}
 
 	/**
-	 * Calls `revive()` on the group's killed members and then on the group itself.
-	 * @since 5.4.0
-	 */
-	public function reviveMembers():Void
-	{
-		for (basic in members)
-		{
-			if (basic != null && !basic.exists)
-				basic.revive();
-		}
-	}
-
-	/**
-	 * Calls `reviveMembers()` and then revives the group itself.
+	 * Calls `revive()` on the group's members and then on the group itself.
 	 */
 	override public function revive():Void
 	{
-		reviveMembers();
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
+		{
+			basic = members[i++];
+
+			if (basic != null && !basic.exists)
+				basic.revive();
+		}
 
 		super.revive();
 	}
@@ -738,33 +714,30 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	}
 
 	/**
-	 * Iterates through every member and index.
-	 */
-	public inline function keyValueIterator()
-	{
-		return members.keyValueIterator();
-	}
-
-	/**
 	 * Applies a function to all members.
 	 *
-	 * @param   func     A function that modifies one element at a time.
-	 * @param   recurse  Whether or not to apply the function to members of subgroups as well.
+	 * @param   Function   A function that modifies one element at a time.
+	 * @param   Recurse    Whether or not to apply the function to members of subgroups as well.
 	 */
-	public function forEach(func:T->Void, recurse = false)
+	public function forEach(Function:T->Void, Recurse:Bool = false)
 	{
-		for (basic in members)
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
 		{
+			basic = members[i++];
+
 			if (basic != null)
 			{
-				if (recurse)
+				if (Recurse)
 				{
-					final group = resolveGroup(basic);
+					var group = resolveGroup(basic);
 					if (group != null)
-						group.forEach(cast func, recurse);
+						group.forEach(cast Function, Recurse);
 				}
 
-				func(basic);
+				Function(cast basic);
 			}
 		}
 	}
@@ -772,23 +745,28 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	/**
 	 * Applies a function to all `alive` members.
 	 *
-	 * @param   func     A function that modifies one element at a time.
-	 * @param   recurse  Whether or not to apply the function to members of subgroups as well.
+	 * @param   Function   A function that modifies one element at a time.
+	 * @param   Recurse    Whether or not to apply the function to members of subgroups as well.
 	 */
-	public function forEachAlive(func:T->Void, recurse = false)
+	public function forEachAlive(Function:T->Void, Recurse:Bool = false)
 	{
-		for (basic in members)
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
 		{
+			basic = members[i++];
+
 			if (basic != null && basic.exists && basic.alive)
 			{
-				if (recurse)
+				if (Recurse)
 				{
-					final group = resolveGroup(basic);
+					var group = resolveGroup(basic);
 					if (group != null)
-						group.forEachAlive(cast func, recurse);
+						group.forEachAlive(cast Function, Recurse);
 				}
 
-				func(basic);
+				Function(cast basic);
 			}
 		}
 	}
@@ -796,23 +774,28 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	/**
 	 * Applies a function to all dead members.
 	 *
-	 * @param   func     A function that modifies one element at a time.
-	 * @param   recurse  Whether or not to apply the function to members of subgroups as well.
+	 * @param   Function   A function that modifies one element at a time.
+	 * @param   Recurse    Whether or not to apply the function to members of subgroups as well.
 	 */
-	public function forEachDead(func:T->Void, recurse = false)
+	public function forEachDead(Function:T->Void, Recurse:Bool = false)
 	{
-		for (basic in members)
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
 		{
+			basic = members[i++];
+
 			if (basic != null && !basic.alive)
 			{
-				if (recurse)
+				if (Recurse)
 				{
-					final group = resolveGroup(basic);
+					var group = resolveGroup(basic);
 					if (group != null)
-						group.forEachDead(cast func, recurse);
+						group.forEachDead(cast Function, Recurse);
 				}
 
-				func(basic);
+				Function(cast basic);
 			}
 		}
 	}
@@ -820,23 +803,28 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	/**
 	 * Applies a function to all existing members.
 	 *
-	 * @param   func     A function that modifies one element at a time.
-	 * @param   recurse  Whether or not to apply the function to members of subgroups as well.
+	 * @param   Function   A function that modifies one element at a time.
+	 * @param   Recurse    Whether or not to apply the function to members of subgroups as well.
 	 */
-	public function forEachExists(func:T->Void, recurse:Bool = false)
+	public function forEachExists(Function:T->Void, Recurse:Bool = false)
 	{
-		for (basic in members)
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
 		{
+			basic = members[i++];
+
 			if (basic != null && basic.exists)
 			{
-				if (recurse)
+				if (Recurse)
 				{
-					final group = resolveGroup(basic);
+					var group = resolveGroup(basic);
 					if (group != null)
-						group.forEachExists(cast func, recurse);
+						group.forEachExists(cast Function, Recurse);
 				}
 
-				func(cast basic);
+				Function(cast basic);
 			}
 		}
 	}
@@ -844,33 +832,38 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 	/**
 	 * Applies a function to all members of type `Class<K>`.
 	 *
-	 * @param   objectClass  A class that objects will be checked against before Function is applied, ex: `FlxSprite`.
-	 * @param   func         A function that modifies one element at a time.
-	 * @param   recurse      Whether or not to apply the function to members of subgroups as well.
+	 * @param   ObjectClass   A class that objects will be checked against before Function is applied, ex: `FlxSprite`.
+	 * @param   Function      A function that modifies one element at a time.
+	 * @param   Recurse       Whether or not to apply the function to members of subgroups as well.
 	 */
-	public function forEachOfType<K>(objectClass:Class<K>, func:K->Void, recurse:Bool = false)
+	public function forEachOfType<K>(ObjectClass:Class<K>, Function:K->Void, Recurse:Bool = false)
 	{
-		for (basic in members)
+		var i:Int = 0;
+		var basic:FlxBasic = null;
+
+		while (i < length)
 		{
+			basic = members[i++];
+
 			if (basic != null)
 			{
-				if (recurse)
+				if (Recurse)
 				{
 					var group = resolveGroup(basic);
 					if (group != null)
-						group.forEachOfType(objectClass, cast func, recurse);
+						group.forEachOfType(ObjectClass, cast Function, Recurse);
 				}
 
-				if (Std.isOfType(basic, objectClass))
-					func(cast basic);
+				if (isOfType(basic, ObjectClass))
+					Function(cast basic);
 			}
 		}
 	}
 
 	@:noCompletion
-	function set_maxSize(size:Int):Int
+	function set_maxSize(Size:Int):Int
 	{
-		maxSize = Std.int(Math.abs(size));
+		maxSize = Std.int(Math.abs(Size));
 
 		if (_marker >= maxSize)
 			_marker = 0;
@@ -879,32 +872,27 @@ class FlxTypedGroup<T:FlxBasic> extends FlxBasic
 			return maxSize;
 
 		// If the max size has shrunk, we need to get rid of some objects
-		while (length > maxSize)
+		var i:Int = maxSize;
+		var l:Int = length;
+		var basic:FlxBasic = null;
+
+		while (i < l)
 		{
-			final basic = members.splice(maxSize - 1, 1)[0];
+			basic = members[i++];
 
 			if (basic != null)
 			{
-				onMemberRemove(basic);
+				if (_memberRemoved != null)
+					_memberRemoved.dispatch(cast basic);
 
 				basic.destroy();
 			}
-			length--;
 		}
 
+		FlxArrayUtil.setLength(members, maxSize);
+		length = members.length;
+
 		return maxSize;
-	}
-	
-	function onMemberAdd(member:T)
-	{
-		if (_memberAdded != null)
-			_memberAdded.dispatch(cast member);
-	}
-	
-	function onMemberRemove(member:T)
-	{
-		if (_memberRemoved != null)
-			_memberRemoved.dispatch(cast member);
 	}
 
 	@:noCompletion
@@ -938,9 +926,9 @@ class FlxTypedGroupIterator<T>
 	var _cursor:Int;
 	var _length:Int;
 
-	public function new(groupMembers:Array<T>, ?filter:T->Bool)
+	public function new(GroupMembers:Array<T>, ?filter:T->Bool)
 	{
-		_groupMembers = groupMembers;
+		_groupMembers = GroupMembers;
 		_filter = filter;
 		_cursor = 0;
 		_length = _groupMembers.length;

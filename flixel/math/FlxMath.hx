@@ -1,14 +1,10 @@
 package flixel.math;
 
-import openfl.geom.Rectangle;
-#if !macro
-#if FLX_MOUSE
+import flash.geom.Rectangle;
 import flixel.FlxG;
-#end
 import flixel.FlxSprite;
 #if FLX_TOUCH
 import flixel.input.touch.FlxTouch;
-#end
 #end
 
 /**
@@ -188,10 +184,10 @@ class FlxMath
 	 */
 	public static function pointInFlxRect(pointX:Float, pointY:Float, rect:FlxRect):Bool
 	{
-		return rect.containsXY(pointX, pointY);
+		return pointX >= rect.x && pointX <= rect.right && pointY >= rect.y && pointY <= rect.bottom;
 	}
 
-	#if (FLX_MOUSE && !macro)
+	#if FLX_MOUSE
 	/**
 	 * Returns true if the mouse world x/y coordinate are within the given rectangular block
 	 *
@@ -313,7 +309,7 @@ class FlxMath
 	{
 		return Math.sqrt(dx * dx + dy * dy);
 	}
-	#if !macro
+
 	/**
 	 * Find the distance (in pixels, rounded) between two FlxSprites, taking their origin into account
 	 *
@@ -458,7 +454,6 @@ class FlxMath
 		else
 			return dx * dx + dy * dy < Distance * Distance;
 	}
-	#end
 	#end
 
 	/**

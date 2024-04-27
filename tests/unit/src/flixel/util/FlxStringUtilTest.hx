@@ -1,6 +1,6 @@
 package flixel.util;
 
-import openfl.display.BitmapData;
+import flash.display.BitmapData;
 import flixel.system.debug.FlxDebugger.FlxDebuggerLayout;
 import massive.munit.Assert;
 

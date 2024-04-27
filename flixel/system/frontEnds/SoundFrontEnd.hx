@@ -2,12 +2,12 @@ package flixel.system.frontEnds;
 
 #if FLX_SOUND_SYSTEM
 import flixel.FlxG;
-import flixel.group.FlxGroup;
+import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.input.keyboard.FlxKey;
 import flixel.math.FlxMath;
-import flixel.system.FlxAssets;
-import flixel.sound.FlxSound;
-import flixel.sound.FlxSoundGroup;
+import flixel.system.FlxAssets.FlxSoundAsset;
+import flixel.system.FlxSound;
+import flixel.system.FlxSoundGroup;
 import flixel.system.ui.FlxSoundTray;
 import openfl.Assets;
 import openfl.media.Sound;
@@ -106,9 +106,6 @@ class SoundFrontEnd
 	 */
 	public function playMusic(embeddedMusic:FlxSoundAsset, volume = 1.0, looped = true, ?group:FlxSoundGroup):Void
 	{
-		if (group == null)
-			group = defaultMusicGroup;
-		
 		if (music == null)
 		{
 			music = new FlxSound();
@@ -117,11 +114,11 @@ class SoundFrontEnd
 		{
 			music.stop();
 		}
-		
+
 		music.loadEmbedded(embeddedMusic, looped);
 		music.volume = volume;
 		music.persist = true;
-		group.add(music);
+		music.group = (group == null) ? defaultMusicGroup : group;
 		music.play();
 	}
 
@@ -183,15 +180,14 @@ class SoundFrontEnd
 
 	function loadHelper(sound:FlxSound, volume:Float, group:FlxSoundGroup, autoPlay = false):FlxSound
 	{
-		if (group == null)
-			group = defaultSoundGroup;
-		
 		sound.volume = volume;
-		group.add(sound);
-		
+
 		if (autoPlay)
+		{
 			sound.play();
-		
+		}
+
+		sound.group = (group == null) ? defaultSoundGroup : group;
 		return sound;
 	}
 
@@ -312,7 +308,7 @@ class SoundFrontEnd
 	{
 		if (music != null && (forceDestroy || !music.persist))
 		{
-			music.destroy();
+			destroySound(music);
 			music = null;
 		}
 
@@ -320,9 +316,16 @@ class SoundFrontEnd
 		{
 			if (sound != null && (forceDestroy || !sound.persist))
 			{
-				sound.destroy();
+				destroySound(sound);
 			}
 		}
+	}
+
+	function destroySound(sound:FlxSound):Void
+	{
+		defaultMusicGroup.remove(sound);
+		defaultSoundGroup.remove(sound);
+		sound.destroy();
 	}
 
 	/**
@@ -366,9 +369,7 @@ class SoundFrontEnd
 
 	function new()
 	{
-		#if FLX_SAVE
 		loadSavedPrefs();
-		#end
 	}
 
 	/**
@@ -427,7 +428,6 @@ class SoundFrontEnd
 		}
 	}
 
-	#if FLX_SAVE
 	/**
 	 * Loads saved sound preferences if they exist.
 	 */
@@ -446,7 +446,6 @@ class SoundFrontEnd
 			muted = FlxG.save.data.mute;
 		}
 	}
-	#end
 
 	function set_volume(Volume:Float):Float
 	{

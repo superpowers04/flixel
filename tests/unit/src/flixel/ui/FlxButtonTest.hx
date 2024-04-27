@@ -1,8 +1,7 @@
 package flixel.ui;
 
+import flash.display.BitmapData;
 import flixel.FlxSprite;
-import flixel.ui.FlxButton;
-import openfl.display.BitmapData;
 import massive.munit.Assert;
 
 class FlxButtonTest extends FlxTest
@@ -46,9 +45,9 @@ class FlxButtonTest extends FlxTest
 
 	function assertStatusAnimationsExist()
 	{
-		var normalName:String = button.statusAnimations[NORMAL];
-		var highlightName:String = button.statusAnimations[HIGHLIGHT];
-		var pressedName:String = button.statusAnimations[PRESSED];
+		var normalName:String = button.statusAnimations[FlxButton.NORMAL];
+		var highlightName:String = button.statusAnimations[FlxButton.HIGHLIGHT];
+		var pressedName:String = button.statusAnimations[FlxButton.PRESSED];
 
 		Assert.isNotNull(button.animation.getByName(normalName));
 		Assert.isNotNull(button.animation.getByName(highlightName));
@@ -75,7 +74,7 @@ class FlxButtonTest extends FlxTest
 
 		button.setPosition();
 		step(1);
-		Assert.areEqual(HIGHLIGHT, button.status);
+		Assert.areEqual(FlxButton.HIGHLIGHT, button.status);
 
 		FlxG.state.remove(button);
 	}
@@ -88,7 +87,7 @@ class FlxButtonTest extends FlxTest
 		FlxG.state.add(button);
 		step(2);
 
-		Assert.areEqual(NORMAL, button.status);
+		Assert.areEqual(FlxButton.NORMAL, button.status);
 		Assert.areEqual("normal", button.animation.curAnim.name);
 		Assert.areEqual(false, button.animation.finished);
 		step(10);

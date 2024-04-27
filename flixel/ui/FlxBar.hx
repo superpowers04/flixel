@@ -1,8 +1,8 @@
 package flixel.ui;
 
-import openfl.display.BitmapData;
-import openfl.geom.Point;
-import openfl.geom.Rectangle;
+import flash.display.BitmapData;
+import flash.geom.Point;
+import flash.geom.Rectangle;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.graphics.FlxGraphic;
@@ -98,7 +98,7 @@ class FlxBar extends FlxSprite
 	public var filledCallback:Void->Void;
 
 	/**
-	 * Object to track value from
+	 * Object to track value from/
 	 */
 	public var parent:Dynamic;
 
@@ -128,7 +128,7 @@ class FlxBar extends FlxSprite
 	var _fillHorizontal:Bool;
 
 	/**
-	 * FlxFrame which is used for rendering front graphics of bar (showing value) in tile render mode.
+	 * FlxSprite which is used for rendering front graphics of bar (showing value) in tile render mode.
 	 */
 	var _frontFrame:FlxFrame;
 
@@ -198,9 +198,9 @@ class FlxBar extends FlxSprite
 	{
 		positionOffset = FlxDestroyUtil.put(positionOffset);
 
-		if (FlxG.renderTile)
+		if (FlxG.renderBlit)
 		{
-			frontFrames = null;
+			_frontFrame = null;
 			_filledFlxRect = FlxDestroyUtil.put(_filledFlxRect);
 		}
 		else
@@ -214,6 +214,7 @@ class FlxBar extends FlxSprite
 		_filledBarPoint = null;
 
 		parent = null;
+		positionOffset = null;
 		emptyCallback = null;
 		filledCallback = null;
 
@@ -841,59 +842,55 @@ class FlxBar extends FlxSprite
 	override public function draw():Void
 	{
 		super.draw();
-		
+
 		if (!FlxG.renderTile)
 			return;
-		
+
 		if (alpha == 0)
 			return;
-		
+
 		if (percent > 0 && _frontFrame.type != FlxFrameType.EMPTY)
 		{
-			for (camera in getCamerasLegacy())
+			for (camera in cameras)
 			{
 				if (!camera.visible || !camera.exists || !isOnScreen(camera))
 				{
 					continue;
 				}
-				
-				_frontFrame.prepareMatrix(_matrix, FlxFrameAngle.ANGLE_0, checkFlipX(), checkFlipY());
+
+				getScreenPosition(_point, camera).subtractPoint(offset);
+
+				_frontFrame.prepareMatrix(_matrix, FlxFrameAngle.ANGLE_0, flipX, flipY);
 				_matrix.translate(-origin.x, -origin.y);
 				_matrix.scale(scale.x, scale.y);
-				
+
 				// rotate matrix if sprite's graphic isn't prerotated
-				if (bakedRotationAngle <= 0)
+				if (angle != 0)
 				{
-					updateTrig();
-					
-					if (angle != 0)
-						_matrix.rotateWithTrig(_cosAngle, _sinAngle);
+					_matrix.rotateWithTrig(_cosAngle, _sinAngle);
 				}
-				
-				getScreenPosition(_point, camera).subtractPoint(offset);
+
 				_point.add(origin.x, origin.y);
-				_matrix.translate(_point.x, _point.y);
-				
 				if (isPixelPerfectRender(camera))
 				{
-					_matrix.tx = Math.floor(_matrix.tx);
-					_matrix.ty = Math.floor(_matrix.ty);
+					_point.floor();
 				}
-				
+
+				_matrix.translate(_point.x, _point.y);
 				camera.drawPixels(_frontFrame, _matrix, colorTransform, blend, antialiasing, shader);
 			}
 		}
 	}
 
-	override function set_pixels(pixels:BitmapData):BitmapData
+	override function set_pixels(Pixels:BitmapData):BitmapData
 	{
 		if (FlxG.renderTile)
 		{
-			return pixels; // hack
+			return Pixels; // hack
 		}
 		else
 		{
-			return super.set_pixels(pixels);
+			return super.set_pixels(Pixels);
 		}
 	}
 
@@ -983,14 +980,8 @@ class FlxBar extends FlxSprite
 	{
 		if (FlxG.renderTile)
 		{
-			if (value != null)
-				value.parent.incrementUseCount();
-				
-			if (frontFrames != null)
-				frontFrames.parent.decrementUseCount();
-
 			frontFrames = value;
-			_frontFrame = (value != null) ? value.frame.copyTo(_frontFrame) : FlxDestroyUtil.destroy(_frontFrame);
+			_frontFrame = (value != null) ? value.frame.copyTo(_frontFrame) : null;
 		}
 		else
 		{

@@ -151,7 +151,14 @@ class FlxEase
 
 	public static function bounceIn(t:Float):Float
 	{
-		return 1 - bounceOut(1 - t);
+		t = 1 - t;
+		if (t < B1)
+			return 1 - 7.5625 * t * t;
+		if (t < B2)
+			return 1 - (7.5625 * (t - B3) * (t - B3) + .75);
+		if (t < B4)
+			return 1 - (7.5625 * (t - B5) * (t - B5) + .9375);
+		return 1 - (7.5625 * (t - B6) * (t - B6) + .984375);
 	}
 
 	public static function bounceOut(t:Float):Float
@@ -167,9 +174,25 @@ class FlxEase
 
 	public static function bounceInOut(t:Float):Float
 	{
-		return t < 0.5
-			? (1 - bounceOut(1 - 2 * t)) / 2
-			: (1 + bounceOut(2 * t - 1)) / 2;
+		if (t < .5)
+		{
+			t = 1 - t * 2;
+			if (t < B1)
+				return (1 - 7.5625 * t * t) / 2;
+			if (t < B2)
+				return (1 - (7.5625 * (t - B3) * (t - B3) + .75)) / 2;
+			if (t < B4)
+				return (1 - (7.5625 * (t - B5) * (t - B5) + .9375)) / 2;
+			return (1 - (7.5625 * (t - B6) * (t - B6) + .984375)) / 2;
+		}
+		t = t * 2 - 1;
+		if (t < B1)
+			return (7.5625 * t * t) / 2 + .5;
+		if (t < B2)
+			return (7.5625 * (t - B3) * (t - B3) + .75) / 2 + .5;
+		if (t < B4)
+			return (7.5625 * (t - B5) * (t - B5) + .9375) / 2 + .5;
+		return (7.5625 * (t - B6) * (t - B6) + .984375) / 2 + .5;
 	}
 
 	public static inline function circIn(t:Float):Float

@@ -56,7 +56,7 @@ import openfl.net.SharedObjectFlushStatus;
 class FlxSave implements IFlxDestroyable
 {
 	
-	static var invalidChars = ~/[ ~%&\\;:"',<>?#]+/g;
+	static var invalidChars = ~/[ ~%&\\;:"',<>?#]+/;
 	
 	/**
 	 * Checks for `~%&\;:"',<>?#` or space characters
@@ -197,7 +197,7 @@ class FlxSave implements IFlxDestroyable
 		// check old save location
 		if (oldSave.bind(name, path))
 		{
-			final success = mergeData(oldSave.data, overwrite, minFileSize);
+			final success = mergeData(oldSave.data);
 
 			if (eraseSave)
 				oldSave.erase();
@@ -374,7 +374,7 @@ class FlxSave implements IFlxDestroyable
 @:access(openfl.net.SharedObject)
 private class FlxSharedObject extends SharedObject
 {
-	#if (flash || android || ios)
+	#if flash
 	/** Use SharedObject as usual */
 	public static inline function getLocal(name:String, ?localPath:String):SharedObject
 	{

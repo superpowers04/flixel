@@ -43,31 +43,31 @@ class ConsoleUtil
 	/**
 	 * Converts the input string into its AST form to be executed.
 	 *
-	 * @param   input  The user's input command.
-	 * @return  The parsed out AST.
+	 * @param	Input	The user's input command.
+	 * @return	The parsed out AST.
 	 */
-	public static function parseCommand(input:String):Expr
+	public static function parseCommand(Input:String):Expr
 	{
-		if (StringTools.endsWith(input, ";"))
-			input = input.substr(0, -1);
-		return parser.parseString(input);
+		if (StringTools.endsWith(Input, ";"))
+			Input = Input.substr(0, -1);
+		return parser.parseString(Input);
 	}
 
 	/**
 	 * Parses and runs the input command.
 	 *
-	 * @param   input  The user's input command.
-	 * @return  Whatever the input code evaluates to.
+	 * @param	Input	The user's input command.
+	 * @return	Whatever the input code evaluates to.
 	 */
-	public static function runCommand(input:String):Dynamic
+	public static function runCommand(Input:String):Dynamic
 	{
-		return interp.expr(parseCommand(input));
+		return interp.expr(parseCommand(Input));
 	}
 
 	/**
 	 * Runs the input expression.
-	 * @param   expr  The expression to run
-	 * @return  Whatever the input code evaluates to.
+	 * @param	Parsed	The parsed form of the user's input command.
+	 * @return	Whatever the input code evaluates to.
 	 */
 	public static function runExpr(expr:Expr):Dynamic
 	{
@@ -77,36 +77,25 @@ class ConsoleUtil
 	/**
 	 * Register a new object to use in any command.
 	 *
-	 * @param   alias   The name with which you want to access the object.
-	 * @param   object  The object to register.
+	 * @param	ObjectAlias	The name with which you want to access the object.
+	 * @param	AnyObject	The object to register.
 	 */
-	public static function registerObject(alias:String, object:Dynamic):Void
+	public static function registerObject(ObjectAlias:String, AnyObject:Dynamic):Void
 	{
-		if (object == null || Reflect.isObject(object))
-			interp.variables.set(alias, object);
+		if (AnyObject == null || Reflect.isObject(AnyObject))
+			interp.variables.set(ObjectAlias, AnyObject);
 	}
 
 	/**
 	 * Register a new function to use in any command.
 	 *
-	 * @param   alias  The name with which you want to access the function.
-	 * @param   func   The function to register.
+	 * @param 	FunctionAlias	The name with which you want to access the function.
+	 * @param 	Function		The function to register.
 	 */
-	public static function registerFunction(alias:String, func:Dynamic):Void
+	public static function registerFunction(FunctionAlias:String, Function:Dynamic):Void
 	{
-		if (Reflect.isFunction(func))
-			interp.variables.set(alias, func);
-	}
-
-	/**
-	 * Removes an alias from the command registry.
-	 *
-	 * @param   alias  The alias to remove.
-	 * @since 5.4.0
-	 */
-	public static function removeByAlias(alias:String):Void
-	{
-		interp.variables.remove(alias);
+		if (Reflect.isFunction(Function))
+			interp.variables.set(FunctionAlias, Function);
 	}
 	#end
 
@@ -164,11 +153,11 @@ class ConsoleUtil
 	/**
 	 * Shortcut to log a text with the Console LogStyle.
 	 *
-	 * @param   text  The text to log.
+	 * @param	Text	The text to log.
 	 */
-	public static inline function log(text:Dynamic):Void
+	public static inline function log(Text:Dynamic):Void
 	{
-		FlxG.log.advanced([text], LogStyle.CONSOLE);
+		FlxG.log.advanced([Text], LogStyle.CONSOLE);
 	}
 }
 

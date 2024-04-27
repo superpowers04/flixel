@@ -20,7 +20,7 @@ class FlxBGSprite extends FlxSprite
 	@:access(flixel.FlxCamera)
 	override public function draw():Void
 	{
-		for (camera in getCamerasLegacy())
+		for (camera in cameras)
 		{
 			if (!camera.visible || !camera.exists)
 			{

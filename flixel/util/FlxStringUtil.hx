@@ -1,6 +1,6 @@
 package flixel.util;
 
-import openfl.display.BitmapData;
+import flash.display.BitmapData;
 import flixel.FlxG;
 import flixel.math.FlxMath;
 import flixel.system.FlxAssets;
@@ -10,7 +10,7 @@ import flixel.util.typeLimit.OneOfTwo;
 using StringTools;
 
 #if flash
-import openfl.geom.Matrix;
+import flash.geom.Matrix;
 #end
 
 /**
@@ -683,8 +683,8 @@ class FlxStringUtil
 
 class LabelValuePair implements IFlxDestroyable
 {
-	static var _pool = new FlxPool(LabelValuePair.new);
-	
+	static var _pool = new FlxPool<LabelValuePair>(LabelValuePair);
+
 	public static inline function weak(label:String, value:Dynamic):LabelValuePair
 	{
 		return _pool.get().create(label, value);

@@ -1,7 +1,7 @@
 package flixel.input.touch;
 
 #if FLX_TOUCH
-import openfl.geom.Point;
+import flash.geom.Point;
 import flixel.FlxG;
 import flixel.input.FlxInput;
 import flixel.input.FlxSwipe;
@@ -87,7 +87,7 @@ class FlxTouch extends FlxPointer implements IFlxDestroyable implements IFlxInpu
 		#if FLX_POINTER_INPUT
 		else if (justReleased)
 		{
-			FlxG.swipes.push(new FlxSwipe(touchPointID, justPressedPosition.copyTo(), getScreenPosition(), justPressedTimeInTicks));
+			FlxG.swipes.push(new FlxSwipe(touchPointID, justPressedPosition, getScreenPosition(), justPressedTimeInTicks));
 		}
 		#end
 	}

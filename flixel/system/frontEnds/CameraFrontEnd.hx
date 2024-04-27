@@ -1,6 +1,6 @@
 package flixel.system.frontEnds;
 
-import openfl.geom.Rectangle;
+import flash.geom.Rectangle;
 import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.util.FlxAxes;
@@ -246,12 +246,21 @@ class CameraFrontEnd
 
 			if (FlxG.renderBlit)
 			{
+				/*if(FlxG.renderCycle && camera.frameIndex != camera.prevFrameIndex) {
+					camera.fill(camera.bgColor, camera.useBgAlphaBlending);
+					camera.screen.dirty = true;
+				}*/
+				
 				camera.fill(camera.bgColor, camera.useBgAlphaBlending);
 				camera.screen.dirty = true;
 			}
 			else
 			{
-				camera.fill(camera.bgColor.to24Bit(), camera.useBgAlphaBlending, camera.bgColor.alphaFloat);
+				//if(!FlxG.renderCycle) {
+				if(camera.bgColor.alpha > 0) { // why do we fill 0 alpha!?
+					camera.fill(camera.bgColor.to24Bit(), camera.useBgAlphaBlending, camera.bgColor.alphaFloat);
+				}
+				//}
 			}
 		}
 	}
@@ -265,6 +274,12 @@ class CameraFrontEnd
 			{
 				if ((camera != null) && camera.exists && camera.visible)
 				{
+					/*if(FlxG.renderCycle && camera.frameIndex != camera.prevFrameIndex) {
+						camera.render();
+						camera.prevFrameIndex = camera.frameIndex;
+					} else {
+						camera.render();
+					}*/
 					camera.render();
 				}
 			}

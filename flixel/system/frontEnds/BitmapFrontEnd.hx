@@ -1,6 +1,6 @@
 package flixel.system.frontEnds;
 
-import openfl.display.BitmapData;
+import flash.display.BitmapData;
 import flixel.graphics.FlxGraphic;
 import flixel.graphics.frames.FlxFrame;
 import flixel.math.FlxPoint;
@@ -9,7 +9,11 @@ import flixel.system.FlxAssets.FlxGraphicAsset;
 import flixel.util.FlxColor;
 import openfl.Assets;
 #if !flash
+#if openfl_legacy
+import openfl.gl.GL;
+#else
 import lime.graphics.opengl.GL;
+#end
 #end
 
 /**
@@ -27,6 +31,11 @@ class BitmapFrontEnd
 	#end
 
 	/**
+	 * gets the totalGPUMemory on context3D supported targets
+	 */
+	public var mem(get, never):Float;
+
+	/**
 	 * Helper FlxFrame object. Containing only one frame.
 	 * Useful for drawing colored rectangles of all sizes in FlxG.renderTile mode.
 	 */
@@ -38,6 +47,7 @@ class BitmapFrontEnd
 	var _whitePixel:FlxFrame;
 
 	var _lastUniqueKeyIndex:Int = 0;
+	var _totalmem:Int;
 
 	public function new()
 	{
@@ -154,7 +164,6 @@ class BitmapFrontEnd
 		{
 			return FlxGraphic.fromBitmapData(cast Graphic, Unique, Key);
 		}
-
 		// String case
 		return FlxGraphic.fromAssetKey(Std.string(Graphic), Unique, Key);
 	}
@@ -287,16 +296,15 @@ class BitmapFrontEnd
 
 	/**
 	 * Totally removes specified FlxGraphic object.
-	 * @param   graphic  object you want to remove and destroy.
+	 * @param	FlxGraphic object you want to remove and destroy.
 	 */
 	public function remove(graphic:FlxGraphic):Void
 	{
 		if (graphic != null)
 		{
 			removeKey(graphic.key);
-			// TODO: find causes of this, and prevent crashes from double graphic destroys
-			if (!graphic.isDestroyed)
-				graphic.destroy();
+			_totalmem -= (graphic.bitmap.width * graphic.bitmap.height)*4;
+			graphic.destroy();
 		}
 	}
 
@@ -340,6 +348,7 @@ class BitmapFrontEnd
 			if (obj != null && !obj.persist && obj.useCount <= 0)
 			{
 				removeKey(key);
+				_totalmem -= (obj.width*obj.height)*4;
 				obj.destroy();
 			}
 		}
@@ -373,6 +382,7 @@ class BitmapFrontEnd
 			if (obj != null)
 				obj.destroy();
 		}
+		_totalmem = 0;
 	}
 
 	/**
@@ -387,6 +397,7 @@ class BitmapFrontEnd
 			if (obj != null && obj.useCount <= 0 && !obj.persist && obj.destroyOnNoUse)
 			{
 				removeByKey(key);
+				_totalmem -= (obj.width*obj.height)*4;
 			}
 		}
 	}
@@ -397,6 +408,12 @@ class BitmapFrontEnd
 		return cast GL.getParameter(GL.MAX_TEXTURE_SIZE);
 	}
 	#end
+
+	function get_mem():Float {
+		return _totalmem / (1024 * 1024) + 76;
+		//@:privateAccess
+		//return FlxG.stage.context3D.totalGPUMemory; //FlxG.stage.context3D.gl.getParameter(openfl.display3D.Context3D.__glMemoryTotalAvailable) / (1024) * 1024; //cast(flixel.FlxG.stage.context3D.gl.getParameter(openfl.display3D.Context3D.__glMemoryTotalAvailable), UInt) * 1000);
+	}
 
 	function get_whitePixel():FlxFrame
 	{

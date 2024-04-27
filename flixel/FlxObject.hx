@@ -1,6 +1,6 @@
 package flixel;
 
-import openfl.display.Graphics;
+import flash.display.Graphics;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
@@ -85,13 +85,6 @@ class FlxObject extends FlxBasic
 	 * Don't modify this unless your objects are passing through each other.
 	 */
 	public static var SEPARATE_BIAS:Float = 4;
-
-	/**
-	 * The default `moves` value of all future `FlxObjects` and `FlxSprites`
-	 * Note: Has no effect on `FlxTexts`, `FlxTilemaps` and `FlxTileBlocks`
-	 * @since 5.6.0
-	 */
-	public static var defaultMoves:Bool = true;
 
 	/**
 	 * Generic value for "left". Used by `facing`, `allowCollisions`, and `touching`.
@@ -619,7 +612,7 @@ class FlxObject extends FlxBasic
 	 * Set this to `false` if you want to skip the automatic motion/movement stuff (see `updateMotion()`).
 	 * `FlxObject` and `FlxSprite` default to `true`. `FlxText`, `FlxTileblock` and `FlxTilemap` default to `false`.
 	 */
-	public var moves(default, set):Bool = defaultMoves;
+	public var moves(default, set):Bool = false;
 
 	/**
 	 * Whether an object will move/alter position after a collision.
@@ -699,13 +692,10 @@ class FlxObject extends FlxBasic
 	 */
 	public var maxAngular:Float = 10000;
 
-	#if FLX_HEALTH
 	/**
 	 * Handy for storing health percentage or armor points or whatever.
 	 */
-	@:deprecated("object.health is being removed in version 6.0.0")
 	public var health:Float = 1;
-	#end
 
 	/**
 	 * Bit field of flags (use with UP, DOWN, LEFT, RIGHT, etc) indicating surface contacts. Use bitwise operators to check the values
@@ -944,7 +934,7 @@ class FlxObject extends FlxBasic
 		var group = FlxTypedGroup.resolveGroup(objectOrGroup);
 		if (group != null) // if it is a group
 		{
-			return group.any(overlapsCallback.bind(_, 0, 0, inScreenSpace, camera));
+			return FlxTypedGroup.overlaps(overlapsCallback, group, 0, 0, inScreenSpace, camera);
 		}
 
 		if (objectOrGroup.flixelType == TILEMAP)
@@ -1003,7 +993,7 @@ class FlxObject extends FlxBasic
 		var group = FlxTypedGroup.resolveGroup(objectOrGroup);
 		if (group != null) // if it is a group
 		{
-			return group.any(overlapsAtCallback.bind(_, x, y, inScreenSpace, camera));
+			return FlxTypedGroup.overlaps(overlapsAtCallback, group, x, y, inScreenSpace, camera);
 		}
 
 		if (objectOrGroup.flixelType == TILEMAP)
@@ -1180,7 +1170,7 @@ class FlxObject extends FlxBasic
 
 	/**
 	 * Handy function for checking if this object is touching a particular surface.
-	 * Note: These flags are set from `FlxG.collide` calls, and get reset in `super.update()`.
+	 * Be sure to check it before calling `super.update()`, as that will reset the flags.
 	 *
 	 * @param   direction   Any of the collision flags (e.g. `LEFT`, `FLOOR`, etc).
 	 * @return  Whether the object is touching an object in (any of) the specified direction(s) this frame.
@@ -1192,7 +1182,7 @@ class FlxObject extends FlxBasic
 
 	/**
 	 * Handy function for checking if this object is just landed on a particular surface.
-	 * Note: These flags are set from `FlxG.collide` calls, and get reset in `super.update()`.
+	 * Be sure to check it before calling `super.update()`, as that will reset the flags.
 	 *
 	 * @param   direction   Any of the collision flags (e.g. `LEFT`, `FLOOR`, etc).
 	 * @return  Whether the object just landed on (any of) the specified surface(s) this frame.
@@ -1202,21 +1192,18 @@ class FlxObject extends FlxBasic
 		return touching.hasAny(direction) && !wasTouching.hasAny(direction);
 	}
 
-	#if FLX_HEALTH
 	/**
 	 * Reduces the `health` variable of this object by the amount specified in `Damage`.
 	 * Calls `kill()` if health drops to or below zero.
 	 *
 	 * @param   Damage   How much health to take away (use a negative number to give a health bonus).
 	 */
-	@:deprecated("object.health is being removed in version 6.0.0")
 	public function hurt(damage:Float):Void
 	{
 		health = health - damage;
 		if (health <= 0)
 			kill();
 	}
-	#end
 
 	/**
 	 * Centers this `FlxObject` on the screen, either by the x axis, y axis, or both.
@@ -1265,8 +1252,8 @@ class FlxObject extends FlxBasic
 	{
 		if (ignoreDrawDebug)
 			return;
-		
-		for (camera in getCamerasLegacy())
+
+		for (camera in cameras)
 		{
 			drawDebugOnCamera(camera);
 
@@ -1309,8 +1296,8 @@ class FlxObject extends FlxBasic
 		}
 
 		// fill static graphics object with square shape
-		gfx.lineStyle(1, color, 0.75);
-		gfx.drawRect(rect.x + 0.5, rect.y + 0.5, rect.width - 1.0, rect.height - 1.0);
+		gfx.lineStyle(1, color, 0.5);
+		gfx.drawRect(rect.x, rect.y, rect.width, rect.height);
 	}
 
 	inline function beginDrawDebug(camera:FlxCamera):Graphics
@@ -1528,7 +1515,7 @@ class FlxObject extends FlxBasic
 /**
  * Determines when to apply collision drag to one object that collided with another.
  */
-enum abstract CollisionDragType(Int)
+@:enum abstract CollisionDragType(Int)
 {
 	/** Never drags on colliding objects. */
 	var NEVER = 0;

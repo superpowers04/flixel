@@ -45,23 +45,22 @@ class FlxStrip extends FlxSprite
 	}
 
 	// TODO: check this for cases when zoom is less than initial zoom...
-	override public function draw():Void
-	{
-		if (alpha == 0 || graphic == null || vertices == null)
-			return;
+    override public function draw():Void
+    {
+        if (alpha == 0 || graphic == null || vertices == null)
+            return;
 
-		final cameras = getCamerasLegacy();
-		for (camera in cameras)
-		{
-			if (!camera.visible || !camera.exists)
-				continue;
+        for (camera in cameras)
+        {
+            if (!camera.visible || !camera.exists)
+                continue;
 
-			getScreenPosition(_point, camera).subtractPoint(offset);
-			#if !flash
-			camera.drawTriangles(graphic, vertices, indices, uvtData, colors, _point, blend, repeat, antialiasing, colorTransform, shader);
-			#else
-			camera.drawTriangles(graphic, vertices, indices, uvtData, colors, _point, blend, repeat, antialiasing);
-			#end
-		}
-	}
+            getScreenPosition(_point, camera).subtractPoint(offset);
+            #if !flash
+            camera.drawTriangles(graphic, vertices, indices, uvtData, colors, _point, blend, repeat, antialiasing, colorTransform, shader);
+            #else
+            camera.drawTriangles(graphic, vertices, indices, uvtData, colors, _point, blend, repeat, antialiasing);
+            #end
+        }
+    }
 }

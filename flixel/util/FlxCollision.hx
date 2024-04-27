@@ -1,7 +1,7 @@
 package flixel.util;
 
-import openfl.display.BitmapData;
-import openfl.geom.Rectangle;
+import flash.display.BitmapData;
+import flash.geom.Rectangle;
 import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -9,8 +9,8 @@ import flixel.group.FlxGroup;
 import flixel.math.FlxAngle;
 import flixel.math.FlxMath;
 import flixel.math.FlxMatrix;
-import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
+import flixel.math.FlxPoint;
 import flixel.tile.FlxTileblock;
 
 /**
@@ -38,21 +38,21 @@ class FlxCollision
 	 * A Pixel Perfect Collision check between two FlxSprites. It will do a bounds check first, and if that passes it will run a
 	 * pixel perfect match on the intersecting area. Works with rotated and animated sprites. May be slow, so use it sparingly.
 	 *
-	 * @param   contact         The first FlxSprite to test against
-	 * @param   target          The second FlxSprite to test again, sprite order is irrelevant
-	 * @param   alphaTolerance  The tolerance value above which alpha pixels are included. Default to 1 (anything that is not fully invisible).
-	 * @param   camera          If the collision is taking place in a camera other than FlxG.camera (the default/current) then pass it here
-	 * @return  Whether the sprites collide
+	 * @param	Contact			The first FlxSprite to test against
+	 * @param	Target			The second FlxSprite to test again, sprite order is irrelevant
+	 * @param	AlphaTolerance	The tolerance value above which alpha pixels are included. Default to 1 (anything that is not fully invisible).
+	 * @param	Camera			If the collision is taking place in a camera other than FlxG.camera (the default/current) then pass it here
+	 * @return	Whether the sprites collide
 	 */
-	public static function pixelPerfectCheck(contact:FlxSprite, target:FlxSprite, alphaTolerance:Int = 1, ?camera:FlxCamera):Bool
+	public static function pixelPerfectCheck(Contact:FlxSprite, Target:FlxSprite, AlphaTolerance:Int = 1, ?Camera:FlxCamera):Bool
 	{
 		// if either of the angles are non-zero, consider the angles of the sprites in the pixel check
-		final advanced = contact.angle != 0 || target.angle != 0
-			|| contact.scale.x != 1 || contact.scale.y != 1
-			|| target.scale.x != 1 || target.scale.y != 1;
+		var advanced = (Contact.angle != 0) || (Target.angle != 0)
+			|| Contact.scale.x != 1 || Contact.scale.y != 1
+			|| Target.scale.x != 1 || Target.scale.y != 1;
 
-		contact.getScreenBounds(boundsA, camera);
-		target.getScreenBounds(boundsB, camera);
+		Contact.getScreenBounds(boundsA, Camera);
+		Target.getScreenBounds(boundsB, Camera);
 
 		boundsA.intersection(boundsB, intersect.set());
 
@@ -68,11 +68,11 @@ class FlxCollision
 		matrixB.identity();
 		matrixB.translate(-(intersect.x - boundsB.x), -(intersect.y - boundsB.y));
 
-		contact.drawFrame();
-		target.drawFrame();
+		Contact.drawFrame();
+		Target.drawFrame();
 
-		var testA:BitmapData = contact.framePixels;
-		var testB:BitmapData = target.framePixels;
+		var testA:BitmapData = Contact.framePixels;
+		var testB:BitmapData = Target.framePixels;
 
 		var overlapWidth:Int = Std.int(intersect.width);
 		var overlapHeight:Int = Std.int(intersect.height);
@@ -83,14 +83,15 @@ class FlxCollision
 			testMatrix.identity();
 
 			// translate the matrix to the center of the sprite
-			testMatrix.translate(-contact.origin.x, -contact.origin.y);
+			testMatrix.translate(-Contact.origin.x, -Contact.origin.y);
 
 			// rotate the matrix according to angle
-			testMatrix.rotate(contact.angle * FlxAngle.TO_RAD);
-			testMatrix.scale(contact.scale.x, contact.scale.y);
+			testMatrix.rotate(Contact.angle * FlxAngle.TO_RAD);
+			testMatrix.scale(Contact.scale.x, Contact.scale.y);
 
 			// translate it back!
 			testMatrix.translate(boundsA.width / 2, boundsA.height / 2);
+			
 
 			// prepare an empty canvas
 			var testA2:BitmapData = FlxBitmapDataPool.get(Math.floor(boundsA.width), Math.floor(boundsA.height), true, FlxColor.TRANSPARENT, false);
@@ -101,9 +102,9 @@ class FlxCollision
 
 			// (same as above)
 			testMatrix.identity();
-			testMatrix.translate(-target.origin.x, -target.origin.y);
-			testMatrix.rotate(target.angle * FlxAngle.TO_RAD);
-			testMatrix.scale(target.scale.x, target.scale.y);
+			testMatrix.translate(-Target.origin.x, -Target.origin.y);
+			testMatrix.rotate(Target.angle * FlxAngle.TO_RAD);
+			testMatrix.scale(Target.scale.x, Target.scale.y);
 			testMatrix.translate(boundsB.width / 2, boundsB.height / 2);
 
 			var testB2:BitmapData = FlxBitmapDataPool.get(Math.floor(boundsB.width), Math.floor(boundsB.height), true, FlxColor.TRANSPARENT, false);
@@ -129,7 +130,7 @@ class FlxCollision
 
 		var hit = false;
 
-		// Analyze overlapping area of BitmapDatas to check for a collision (alpha values >= alphaTolerance)
+		// Analyze overlapping area of BitmapDatas to check for a collision (alpha values >= AlphaTolerance)
 		var alphaA:Int = 0;
 		var alphaB:Int = 0;
 		var overlapPixels:Int = overlapWidth * overlapHeight;
@@ -143,7 +144,7 @@ class FlxCollision
 			alphaA = pixelsA.readUnsignedByte();
 			alphaB = pixelsB.readUnsignedByte();
 
-			if (alphaA >= alphaTolerance && alphaB >= alphaTolerance)
+			if (alphaA >= AlphaTolerance && alphaB >= AlphaTolerance)
 			{
 				hit = true;
 				break;
@@ -160,7 +161,7 @@ class FlxCollision
 				alphaA = pixelsA.readUnsignedByte();
 				alphaB = pixelsB.readUnsignedByte();
 
-				if (alphaA >= alphaTolerance && alphaB >= alphaTolerance)
+				if (alphaA >= AlphaTolerance && alphaB >= AlphaTolerance)
 				{
 					hit = true;
 					break;
@@ -178,65 +179,80 @@ class FlxCollision
 	}
 
 	/**
-	 * Checks to see if a point in 2D world space overlaps this `FlxSprite` object's
-	 * current displayed pixels. This check is ALWAYS made in screen space, and
-	 * factors in `scale`, `angle`, `offset`, `origin`, and `scrollFactor`.
+	 * A Pixel Perfect Collision check between a given x/y coordinate and an FlxSprite
 	 *
-	 * @param   worldX          The x coordinate of the point given in world space
-	 * @param   worldY          The y coordinate of the point given in world space
-	 * @param   sprite          The FlxSprite to check the point against
-	 * @param   alphaTolerance  The alpha tolerance for with pixels are considered "solid".
-	 *                          Defaults to 1 (anything that is not fully invisible).
-	 * @return  Whether the x/y point overlaps with the sprite, false if not
+	 * @param	PointX			The x coordinate of the point given in local space (relative to the FlxSprite, not game world coordinates)
+	 * @param	PointY			The y coordinate of the point given in local space (relative to the FlxSprite, not game world coordinates)
+	 * @param	Target			The FlxSprite to check the point against
+	 * @param	AlphaTolerance	The alpha tolerance level above which pixels are counted as colliding. Default to 1 (anything that is not fully invisible).
+	 * @return	Boolean True if the x/y point collides with the FlxSprite, false if not
 	 */
-	@:deprecated("Use sprite.pixelsOverlapPoint instead")
-	public static function pixelPerfectPointCheck(worldX:Int, worldY:Int, target:FlxSprite, alphaTolerance = 1):Bool
+	public static function pixelPerfectPointCheck(PointX:Int, PointY:Int, Target:FlxSprite, AlphaTolerance:Int = 1):Bool
 	{
+		// Intersect check
+		if (!FlxMath.pointInCoordinates(PointX, PointY, Math.floor(Target.x), Math.floor(Target.y), Std.int(Target.width), Std.int(Target.height)))
+		{
+			return false;
+		}
+
 		if (FlxG.renderTile)
-			target.drawFrame();
-		
-		return target.pixelsOverlapPoint(FlxPoint.weak(worldX, worldY), alphaTolerance);
+		{
+			Target.drawFrame();
+		}
+
+		// How deep is pointX/Y within the rect?
+		var test:BitmapData = Target.framePixels;
+
+		var pixelAlpha = FlxColor.fromInt(test.getPixel32(Math.floor(PointX - Target.x), Math.floor(PointY - Target.y))).alpha;
+
+		if (FlxG.renderTile)
+		{
+			pixelAlpha = Std.int(pixelAlpha * Target.alpha);
+		}
+
+		// How deep is pointX/Y within the rect?
+		return pixelAlpha >= AlphaTolerance;
 	}
 
 	/**
 	 * Creates a "wall" around the given camera which can be used for FlxSprite collision
 	 *
-	 * @param   camera             The FlxCamera to use for the wall bounds (can be FlxG.camera for the current one)
-	 * @param   placeOutside       Whether to place the camera wall outside or inside
-	 * @param   thickness          The thickness of the wall in pixels
-	 * @param   adjustWorldBounds  Adjust the FlxG.worldBounds based on the wall (true) or leave alone (false)
-	 * @return  FlxGroup The 4 FlxTileblocks that are created are placed into this FlxGroup which should be added to your State
+	 * @param	Camera				The FlxCamera to use for the wall bounds (can be FlxG.camera for the current one)
+	 * @param	Placement			Whether to place the camera wall outside or inside
+	 * @param	Thickness			The thickness of the wall in pixels
+	 * @param	AdjustWorldBounds	Adjust the FlxG.worldBounds based on the wall (true) or leave alone (false)
+	 * @return	FlxGroup The 4 FlxTileblocks that are created are placed into this FlxGroup which should be added to your State
 	 */
-	public static function createCameraWall(camera:FlxCamera, placeOutside = true, thickness:Int, adjustWorldBounds = false):FlxGroup
+	public static function createCameraWall(Camera:FlxCamera, PlaceOutside:Bool = true, Thickness:Int, AdjustWorldBounds:Bool = false):FlxGroup
 	{
 		var left:FlxTileblock = null;
 		var right:FlxTileblock = null;
 		var top:FlxTileblock = null;
 		var bottom:FlxTileblock = null;
 
-		if (placeOutside)
+		if (PlaceOutside)
 		{
-			left = new FlxTileblock(Math.floor(camera.x - thickness), Math.floor(camera.y), thickness, camera.height);
-			right = new FlxTileblock(Math.floor(camera.x + camera.width), Math.floor(camera.y), thickness, camera.height);
-			top = new FlxTileblock(Math.floor(camera.x - thickness), Math.floor(camera.y - thickness), camera.width + thickness * 2, thickness);
-			bottom = new FlxTileblock(Math.floor(camera.x - thickness), camera.height, camera.width + thickness * 2, thickness);
+			left = new FlxTileblock(Math.floor(Camera.x - Thickness), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
+			right = new FlxTileblock(Math.floor(Camera.x + Camera.width), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
+			top = new FlxTileblock(Math.floor(Camera.x - Thickness), Math.floor(Camera.y - Thickness), Camera.width + Thickness * 2, Thickness);
+			bottom = new FlxTileblock(Math.floor(Camera.x - Thickness), Camera.height, Camera.width + Thickness * 2, Thickness);
 
-			if (adjustWorldBounds)
+			if (AdjustWorldBounds)
 			{
-				FlxG.worldBounds.set(camera.x - thickness, camera.y - thickness, camera.width + thickness * 2, camera.height + thickness * 2);
+				FlxG.worldBounds.set(Camera.x - Thickness, Camera.y - Thickness, Camera.width + Thickness * 2, Camera.height + Thickness * 2);
 			}
 		}
 		else
 		{
-			left = new FlxTileblock(Math.floor(camera.x), Math.floor(camera.y + thickness), thickness, camera.height - (thickness * 2));
-			right = new FlxTileblock(Math.floor(camera.x + camera.width - thickness), Math.floor(camera.y + thickness), thickness,
-				camera.height - (thickness * 2));
-			top = new FlxTileblock(Math.floor(camera.x), Math.floor(camera.y), camera.width, thickness);
-			bottom = new FlxTileblock(Math.floor(camera.x), camera.height - thickness, camera.width, thickness);
+			left = new FlxTileblock(Math.floor(Camera.x), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
+			right = new FlxTileblock(Math.floor(Camera.x + Camera.width - Thickness), Math.floor(Camera.y + Thickness), Thickness,
+				Camera.height - (Thickness * 2));
+			top = new FlxTileblock(Math.floor(Camera.x), Math.floor(Camera.y), Camera.width, Thickness);
+			bottom = new FlxTileblock(Math.floor(Camera.x), Camera.height - Thickness, Camera.width, Thickness);
 
-			if (adjustWorldBounds)
+			if (AdjustWorldBounds)
 			{
-				FlxG.worldBounds.set(camera.x, camera.y, camera.width, camera.height);
+				FlxG.worldBounds.set(Camera.x, Camera.y, Camera.width, Camera.height);
 			}
 		}
 
@@ -285,7 +301,7 @@ class FlxCollision
 				result = FlxPoint.get(x, y);
 			else
 				result.set(x, y);
-
+			
 			putWeakRefs();
 			return result;
 		}

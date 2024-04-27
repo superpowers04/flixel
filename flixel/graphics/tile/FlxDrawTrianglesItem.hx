@@ -13,7 +13,7 @@ import openfl.display.ShaderParameter;
 import openfl.display.TriangleCulling;
 import openfl.geom.ColorTransform;
 
-typedef DrawData<T> = openfl.Vector<T>;
+typedef DrawData<T> = #if (flash || openfl >= "4.0.0") openfl.Vector<T> #else Array<T> #end;
 
 /**
  * @author Zaphod
@@ -74,24 +74,26 @@ class FlxDrawTrianglesItem extends FlxDrawBaseItem<FlxDrawTrianglesItem>
 		setParameterValue(shader.hasTransform, true);
 		setParameterValue(shader.hasColorTransform, colored || hasColorOffsets);
 
-		#if (openfl > "8.7.0")
-		camera.canvas.graphics.overrideBlendMode(blend);
-		#end
-
+			#if (openfl > "8.7.0")
+			camera.canvas.graphics.overrideBlendMode(blend);
+			#end
 		camera.canvas.graphics.beginShaderFill(shader);
 		#else
 		camera.canvas.graphics.beginBitmapFill(graphics.bitmap, null, true, (camera.antialiasing || antialiasing));
 		#end
 
+		#if !openfl_legacy
 		camera.canvas.graphics.drawTriangles(vertices, indices, uvtData, TriangleCulling.NONE);
+		#else
+		camera.canvas.graphics.drawTriangles(vertices, indices, uvtData, TriangleCulling.NONE, (colored) ? colors : null, blending);
+		#end
 		camera.canvas.graphics.endFill();
-
 		#if FLX_DEBUG
 		if (FlxG.debugger.drawDebug)
 		{
 			var gfx:Graphics = camera.debugLayer.graphics;
 			gfx.lineStyle(1, FlxColor.BLUE, 0.5);
-			gfx.drawTriangles(vertices, indices, uvtData);
+			gfx.drawTriangles(vertices, indices);
 		}
 		#end
 
@@ -101,10 +103,10 @@ class FlxDrawTrianglesItem extends FlxDrawBaseItem<FlxDrawTrianglesItem>
 	override public function reset():Void
 	{
 		super.reset();
-		vertices.length = 0;
-		indices.length = 0;
-		uvtData.length = 0;
-		colors.length = 0;
+		vertices.splice(0, vertices.length);
+		indices.splice(0, indices.length);
+		uvtData.splice(0, uvtData.length);
+		colors.splice(0, colors.length);
 
 		verticesPosition = 0;
 		indicesPosition = 0;

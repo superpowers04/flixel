@@ -1,6 +1,6 @@
 package flixel.math;
 
-import openfl.geom.Matrix;
+import flash.geom.Matrix;
 
 /**
  * Helper class for making fast matrix calculations for rendering.

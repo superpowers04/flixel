@@ -43,7 +43,7 @@ class Watch extends Window
 		{
 			switch (data)
 			{
-				case QUICK(_) | FUNCTION(_):
+				case QUICK(value):
 					existing.data = data;
 				case _:
 			}
@@ -71,7 +71,7 @@ class Watch extends Window
 	{
 		for (entry in entries)
 		{
-			if (data == null || data.match(QUICK(_) | FUNCTION(_)))
+			if (data == null || data.match(QUICK(_)))
 			{
 				if (entry.displayName == displayName)
 					return entry;

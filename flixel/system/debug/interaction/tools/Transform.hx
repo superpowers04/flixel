@@ -1,9 +1,9 @@
 package flixel.system.debug.interaction.tools;
 
-import openfl.display.BitmapData;
-import openfl.display.Graphics;
-import openfl.display.LineScaleMode;
-import openfl.display.CapsStyle;
+import flash.display.BitmapData;
+import flash.display.Graphics;
+import flash.display.LineScaleMode;
+import flash.display.CapsStyle;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
 import flixel.math.FlxAngle;
@@ -15,22 +15,22 @@ import flixel.util.FlxColor;
 
 using flixel.util.FlxArrayUtil;
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/transform.png") #end
+@:bitmap("assets/images/debugger/buttons/transform.png")
 private class GraphicTransformTool extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/cursorCross.png") #end
+@:bitmap("assets/images/debugger/cursorCross.png")
 private class GraphicTransformCursorDefault extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/cursors/transformScaleY.png") #end
+@:bitmap("assets/images/debugger/cursors/transformScaleY.png")
 private class GraphicTransformCursorScaleY extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/cursors/transformScaleX.png") #end
+@:bitmap("assets/images/debugger/cursors/transformScaleX.png")
 private class GraphicTransformCursorScaleX extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/cursors/transformScaleXY.png") #end
+@:bitmap("assets/images/debugger/cursors/transformScaleXY.png")
 private class GraphicTransformCursorScaleXY extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/cursors/transformRotate.png") #end
+@:bitmap("assets/images/debugger/cursors/transformRotate.png")
 private class GraphicTransformCursorRotate extends BitmapData {}
 
 /**

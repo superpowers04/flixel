@@ -1,8 +1,8 @@
 package flixel.system.debug.stats;
 
-import openfl.display.BitmapData;
-import openfl.system.System;
-import openfl.text.TextField;
+import flash.display.BitmapData;
+import flash.system.System;
+import flash.text.TextField;
 import flixel.FlxG;
 import flixel.math.FlxMath;
 import flixel.system.FlxLinkedList;
@@ -12,10 +12,10 @@ import flixel.system.debug.FlxDebugger.GraphicStats;
 import flixel.system.ui.FlxSystemButton;
 import flixel.util.FlxColor;
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/minimize.png") #end
+@:bitmap("assets/images/debugger/buttons/minimize.png")
 private class GraphicMinimizeButton extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/maximize.png") #end
+@:bitmap("assets/images/debugger/buttons/maximize.png")
 private class GraphicMaximizeButton extends BitmapData {}
 
 /**
@@ -30,7 +30,7 @@ class Stats extends Window
 	/**
 	 * How often to update the stats, in ms. The lower, the more performance-intense!
 	 */
-	static inline var UPDATE_DELAY:Int = 250;
+	static inline var UPDATE_DELAY:Int = 650;
 
 	/**
 	 * The initial width of the stats window.
@@ -39,6 +39,7 @@ class Stats extends Window
 
 	static inline var FPS_COLOR:FlxColor = 0xff96ff00;
 	static inline var MEMORY_COLOR:FlxColor = 0xff009cff;
+	static inline var VMEMORY_COLOR:FlxColor = 0xFF6000FF;
 	static inline var DRAW_TIME_COLOR:FlxColor = 0xffA60004;
 	static inline var UPDATE_TIME_COLOR:FlxColor = 0xffdcd400;
 
@@ -55,6 +56,7 @@ class Stats extends Window
 
 	var fpsGraph:StatsGraph;
 	var memoryGraph:StatsGraph;
+	var gpuGraph:StatsGraph;
 	var drawTimeGraph:StatsGraph;
 	var updateTimeGraph:StatsGraph;
 
@@ -84,6 +86,7 @@ class Stats extends Window
 	var _activeObjectMarker:Int = 0;
 
 	var _paused:Bool = true;
+	var _context3D:Bool;
 
 	var _toggleSizeButton:FlxSystemButton;
 
@@ -93,8 +96,12 @@ class Stats extends Window
 	public function new()
 	{
 		super("Stats", new GraphicStats(0, 0), 0, 0, false);
+		_context3D = FlxG.stage.context3D != null ? true : false;
 
 		var minHeight = if (FlxG.renderTile) 200 else 185;
+		if(_context3D) {
+			minHeight += 60;
+		}
 		minSize.y = minHeight;
 		resize(INITIAL_WIDTH, minHeight);
 
@@ -115,6 +122,12 @@ class Stats extends Window
 
 		memoryGraph = new StatsGraph(graphX, graphY, graphWidth, graphHeight, MEMORY_COLOR, "MB");
 		addChild(memoryGraph);
+		graphY += (Std.int(_header.height) + graphHeight);
+
+		if(_context3D) {
+			gpuGraph = new StatsGraph(graphX, graphY,graphWidth, graphHeight, VMEMORY_COLOR, "VGB");
+			addChild(gpuGraph);
+		}
 
 		graphY = Std.int(_header.height) + gutter;
 		graphX += (gutter + graphWidth + 20);
@@ -130,8 +143,10 @@ class Stats extends Window
 		drawTimeGraph.visible = false;
 		addChild(drawTimeGraph);
 
-		addChild(_leftTextField = DebuggerUtil.createTextField(gutter, (graphHeight * 2) + 45, LABEL_COLOR, TEXT_SIZE));
-		addChild(_rightTextField = DebuggerUtil.createTextField(gutter + 75, (graphHeight * 2) + 45, FlxColor.WHITE, TEXT_SIZE));
+		final gpuMulti:Float = _context3D ? 3.4 : 2;
+
+		addChild(_leftTextField = DebuggerUtil.createTextField(gutter, (graphHeight * gpuMulti) + 45 , LABEL_COLOR, TEXT_SIZE));
+		addChild(_rightTextField = DebuggerUtil.createTextField(gutter + 75, (graphHeight * gpuMulti) + 45, FlxColor.WHITE, TEXT_SIZE));
 
 		_leftTextField.multiline = _rightTextField.multiline = true;
 
@@ -141,8 +156,10 @@ class Stats extends Window
 			drawMethod =
 				#if FLX_RENDER_TRIANGLE
 				"DrawTrian.";
-				#else
+				#elseif FLX_DRAW_QUADS
 				"DrawQuads";
+				#else
+				"DrawTiles";
 				#end
 			drawMethod = '\n$drawMethod:';
 		}
@@ -195,6 +212,12 @@ class Stats extends Window
 		}
 		memoryGraph = null;
 
+		if (gpuGraph != null)
+		{
+			removeChild(gpuGraph);
+		}
+		gpuGraph = null;
+
 		if (_leftTextField != null)
 		{
 			removeChild(_leftTextField);
@@ -236,7 +259,7 @@ class Stats extends Window
 		}
 		_lastTime = time;
 
-		_updateTimer += elapsed;
+		_updateTimer += Math.floor(FlxG.elapsed*1000);
 
 		_frameCount++;
 
@@ -244,6 +267,9 @@ class Stats extends Window
 		{
 			fpsGraph.update(currentFps());
 			memoryGraph.update(currentMem());
+			if(_context3D) {
+				gpuGraph.update(FlxG.texture.memory);
+			}
 			updateTexts();
 
 			_frameCount = 0;
@@ -317,7 +343,11 @@ class Stats extends Window
 	 */
 	public inline function currentFps():Float
 	{
-		return _frameCount / intervalTime();
+		if(FlxG.fixedFramerate) {
+			return Math.min(_frameCount / intervalTime(),FlxG.drawFramerate);
+		} else {
+		 	return _frameCount / intervalTime();
+		}
 	}
 
 	/**

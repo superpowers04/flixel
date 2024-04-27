@@ -1,9 +1,9 @@
 package flixel.math;
 
-import flixel.util.FlxPool.IFlxPooled;
+import flash.geom.Rectangle;
 import flixel.util.FlxPool;
+import flixel.util.FlxPool.IFlxPooled;
 import flixel.util.FlxStringUtil;
-import openfl.geom.Rectangle;
 
 /**
  * Stores a rectangle.
@@ -12,9 +12,7 @@ class FlxRect implements IFlxPooled
 {
 	public static var pool(get, never):IFlxPool<FlxRect>;
 
-	static var _pool:FlxPool<FlxRect> = new FlxPool(FlxRect.new.bind(0, 0, 0, 0));
-	// With the version below, this caused weird CI issues when FLX_NO_POINT_POOL is defined
-	// static var _pool = new FlxPool<FlxRect>(FlxRect);
+	static var _pool = new FlxPool<FlxRect>(FlxRect);
 
 	/**
 	 * Recycle or create new FlxRect.
@@ -91,7 +89,7 @@ class FlxRect implements IFlxPooled
 	}
 
 	/**
-	 * Add this FlxRect to the recycling pool if it's a weak reference (allocated via weak()).
+	 * Add this FlxPoint to the recycling pool if it's a weak reference (allocated via weak()).
 	 */
 	public inline function putWeak():Void
 	{
@@ -227,26 +225,14 @@ class FlxRect implements IFlxPooled
 	/**
 	 * Returns true if this FlxRect contains the FlxPoint
 	 *
-	 * @param   point  The FlxPoint to check
-	 * @return  True if the FlxPoint is within this FlxRect, otherwise false
+	 * @param	Point	The FlxPoint to check
+	 * @return	True if the FlxPoint is within this FlxRect, otherwise false
 	 */
-	public inline function containsPoint(point:FlxPoint):Bool
+	public inline function containsPoint(Point:FlxPoint):Bool
 	{
-		final result = containsXY(point.x, point.y);
-		point.putWeak();
+		var result = FlxMath.pointInFlxRect(Point.x, Point.y, this);
+		Point.putWeak();
 		return result;
-	}
-
-	/**
-	 * Returns true if this FlxRect contains the FlxPoint
-	 *
-	 * @param   xPos  The x position to check
-	 * @param   yPos  The y position to check
-	 * @return  True if the FlxPoint is within this FlxRect, otherwise false
-	 */
-	public inline function containsXY(xPos:Float, yPos:Float):Bool
-	{
-		return xPos >= left && xPos <= right && yPos >= top && yPos <= bottom;
 	}
 
 	/**

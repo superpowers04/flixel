@@ -18,8 +18,7 @@
 	],
 	"exclude": {
 		"all": [
-			"TestSuite",
-			"/export/"
+			"TestSuite"
 		],
 		"AvoidStarImport": [
 			"flixel.math.FlxRandomTest"
@@ -94,17 +93,7 @@
 			}
 		},
 		{
-			"type": "ParameterName",
-			"props": {
-				"format": "^[a-z][a-zA-Z0-9]*$",
-				"severity": "IGNORE"
-			}
-		},
-		{
-			"type": "SimplifyBooleanExpression",
-			"props": {
-				"severity": "IGNORE"
-			}
+			"type": "SimplifyBooleanExpression"
 		},
 		{
 			"type": "SimplifyBooleanReturn"

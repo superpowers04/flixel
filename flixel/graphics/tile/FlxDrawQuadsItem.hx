@@ -1,5 +1,6 @@
 package flixel.graphics.tile;
 
+#if FLX_DRAW_QUADS
 import flixel.FlxCamera;
 import flixel.graphics.frames.FlxFrame;
 import flixel.graphics.tile.FlxDrawBaseItem.FlxDrawItemType;
@@ -67,9 +68,8 @@ class FlxDrawQuadsItem extends FlxDrawBaseItem<FlxDrawQuadsItem>
 		transforms.push(matrix.tx);
 		transforms.push(matrix.ty);
 
-		var alphaMultiplier = transform != null ? transform.alphaMultiplier : 1.0;
 		for (i in 0...VERTICES_PER_QUAD)
-			alphas.push(alphaMultiplier);
+			alphas.push(transform != null ? transform.alphaMultiplier : 1.0);
 
 		if (colored || hasColorOffsets)
 		{
@@ -114,12 +114,8 @@ class FlxDrawQuadsItem extends FlxDrawBaseItem<FlxDrawQuadsItem>
 	{
 		if (rects.length == 0)
 			return;
-		
-		// TODO: catch this error when the dev actually messes up, not in the draw phase
-		if (shader == null && graphics.isDestroyed)
-			throw 'Attempted to render an invalid FlxDrawItem, did you destroy a cached sprite?';
-		
-		final shader = shader != null ? shader : graphics.shader;
+
+		var shader = shader != null ? shader : graphics.shader;
 		shader.bitmap.input = graphics.bitmap;
 		shader.bitmap.filter = (camera.antialiasing || antialiasing) ? LINEAR : NEAREST;
 		shader.alpha.value = alphas;
@@ -149,3 +145,4 @@ class FlxDrawQuadsItem extends FlxDrawBaseItem<FlxDrawQuadsItem>
 	}
 	#end
 }
+#end

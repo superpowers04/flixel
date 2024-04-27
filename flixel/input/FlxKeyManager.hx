@@ -1,6 +1,6 @@
 package flixel.input;
 
-import openfl.events.KeyboardEvent;
+import flash.events.KeyboardEvent;
 import flixel.FlxG;
 import flixel.input.FlxInput.FlxInputState;
 import flixel.input.keyboard.FlxKey;

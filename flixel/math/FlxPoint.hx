@@ -156,7 +156,7 @@ import openfl.geom.Point;
 	}
 
 	/**
-	 * Operator that adds the right point to the left point, returning the left point instance.
+	 * Operator that adds two points, returning a new point.
 	 */
 	@:noCompletion
 	@:op(A += B)
@@ -166,7 +166,7 @@ import openfl.geom.Point;
 	}
 
 	/**
-	 * Operator that subtracts the right point from the left point, returning the left point instance.
+	 * Operator that subtracts two points, returning a new point.
 	 */
 	@:noCompletion
 	@:op(A -= B)
@@ -176,7 +176,7 @@ import openfl.geom.Point;
 	}
 
 	/**
-	 * Operator that scales a point by float, returning the same point instance.
+	 * Operator that scales a points by float, returning a new point.
 	 */
 	@:noCompletion
 	@:op(A *= B)
@@ -224,7 +224,7 @@ import openfl.geom.Point;
 	}
 
 	/**
-	 * Operator that adds the right point to the left point, returning the left point instance.
+	 * Operator that adds two points, returning a new point.
 	 */
 	@:noCompletion
 	@:op(A += B)
@@ -234,7 +234,7 @@ import openfl.geom.Point;
 	}
 
 	/**
-	 * Operator that subtracts the right point from the left point, returning the left point instance.
+	 * Operator that subtracts two points, returning a new point.
 	 */
 	@:noCompletion
 	@:op(A -= B)
@@ -299,7 +299,7 @@ import openfl.geom.Point;
 
 	public inline function new(x:Float = 0, y:Float = 0)
 	{
-		this = FlxPoint.get(x, y);
+		this = new FlxBasePoint(x, y);
 	}
 
 	/**
@@ -1217,7 +1217,7 @@ import openfl.geom.Point;
 	 * The angle between points (in degrees).
 	 *
 	 * @param   p   second point, which we find the angle
-	 * @return  the angle in degrees
+	 * @return  the angle in radians
 	 */
 	public inline function degreesBetween(p:FlxPoint):Float
 	{
@@ -1436,7 +1436,7 @@ import openfl.geom.Point;
 class FlxBasePoint implements IFlxPooled
 {
 	#if FLX_POINT_POOL
-	static var pool:FlxPool<FlxBasePoint> = new FlxPool(FlxBasePoint.new.bind(0, 0));
+	static var pool:FlxPool<FlxBasePoint> = new FlxPool(FlxBasePoint);
 	#end
 
 	/**

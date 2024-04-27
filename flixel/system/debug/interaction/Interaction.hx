@@ -1,12 +1,12 @@
 package flixel.system.debug.interaction;
 
-import openfl.display.BitmapData;
-import openfl.display.Graphics;
-import openfl.display.Sprite;
-import openfl.display.DisplayObject;
-import openfl.events.KeyboardEvent;
+import flash.display.BitmapData;
+import flash.display.Graphics;
+import flash.display.Sprite;
+import flash.display.DisplayObject;
+import flash.events.KeyboardEvent;
 import flixel.FlxObject;
-import openfl.events.MouseEvent;
+import flash.events.MouseEvent;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.input.FlxPointer;
 import flixel.math.FlxPoint;
@@ -18,11 +18,15 @@ import flixel.system.debug.interaction.tools.Eraser;
 import flixel.system.debug.interaction.tools.Mover;
 import flixel.system.debug.interaction.tools.Pointer;
 import flixel.system.debug.interaction.tools.Tool;
-import flixel.system.debug.interaction.tools.ToggleBounds;
 import flixel.util.FlxDestroyUtil;
 import flixel.util.FlxSpriteUtil;
 #if !(FLX_NATIVE_CURSOR && FLX_MOUSE)
-import openfl.display.Bitmap;
+import flash.display.Bitmap;
+#end
+#if (haxe_ver >= 4.2)
+import Std.isOfType;
+#else
+import Std.is as isOfType;
 #end
 
 /**
@@ -34,10 +38,6 @@ import openfl.display.Bitmap;
  */
 class Interaction extends Window
 {
-	static inline var BUTTONS_PER_LINE = 2;
-	static inline var SPACING = 25;
-	static inline var PADDING = 10;
-	
 	public var activeTool(default, null):Tool;
 	public var selectedItems(default, null):FlxTypedGroup<FlxObject> = new FlxTypedGroup();
 
@@ -52,19 +52,7 @@ class Interaction extends Window
 	 * selection marks, for instance.
 	 */
 	public var shouldDrawItemsSelection:Bool = true;
-	
-	/**
-	 * Whether or not the user is using a mac keyboard, determines whether to use command or ctrl
-	 */
-	public final macKeyboard:Bool =
-		#if mac
-		true;
-		#elseif (js && html5)
-		untyped js.Syntax.code("/AppleWebKit/.test (navigator.userAgent) && /Mobile\\/\\w+/.test (navigator.userAgent) || /Mac/.test (navigator.platform)");
-		#else
-		false;
-		#end
-	
+
 	var _container:Sprite;
 	var _customCursor:Sprite;
 	var _tools:Array<Tool> = [];
@@ -91,7 +79,6 @@ class Interaction extends Window
 		addTool(new Mover());
 		addTool(new Eraser());
 		addTool(new Transform());
-		addTool(new ToggleBounds());
 
 		FlxG.signals.postDraw.add(postDraw);
 		FlxG.debugger.visibilityChanged.add(handleDebuggerVisibilityChanged);
@@ -220,7 +207,7 @@ class Interaction extends Window
 	 * screen, they can be activated when the user clicks a button, and so on. Check
 	 * the classes in the package `flixel.system.debug.interaction.tools` for examples.
 	 *
-	 * @param   tool  instance of a tool that will be added to the interaction system.
+	 * @param tool instance of a tool that will be added to the interaction system.
 	 */
 	public function addTool(tool:Tool):Void
 	{
@@ -232,77 +219,16 @@ class Interaction extends Window
 		if (button == null)
 			return;
 
-		final buttons = countToolsWithUIButton();
-		final row = Math.ceil(buttons / BUTTONS_PER_LINE);
-		final column = (buttons - 1) % BUTTONS_PER_LINE;
+		var buttonsPerLine = 2;
+		var buttons = countToolsWithUIButton();
+		var lines = Std.int(Math.ceil(buttons / buttonsPerLine));
+		var slot = Std.int(buttons / lines);
 
-		button.x = PADDING + column * SPACING;
-		button.y = 20 * row;
+		button.x = -15 + slot * 25;
+		button.y = 20 * lines;
 
 		addChild(button);
-		resizeByTotal(buttons);
-	}
-	
-	/**
-	 * Removes the tool, if possible. If the tool has a button, all other buttons will be moved and
-	 * the containing window will be resized, if needed.
-	 * 
-	 * @param   tool  The tool to be removed
-	 * @since 5.4.0
-	 */
-	public function removeTool(tool)
-	{
-		if (!_tools.contains(tool))
-			return;
-		
-		// If there's no button just remove it
-		if (tool.button == null)
-		{
-			_tools.remove(tool);
-			return;
-		}
-		
-		// if there is a button move all the following buttons
-		var index = _tools.indexOf(tool);
-		var prevX = tool.button.x;
-		var prevY = tool.button.y;
-		
-		_tools.remove(tool);
-		removeChild(tool.button);
-		
-		while (index < _tools.length)
-		{
-			final tool = _tools[index];
-			if (tool.button != null)
-			{
-				// store button pos
-				final tempX = tool.button.x;
-				final tempY = tool.button.y;
-				// set to prev pos
-				tool.button.x = prevX;
-				tool.button.y = prevY;
-				// store prev pos
-				prevX = tempX;
-				prevY = tempY;
-			}
-			index++;
-		}
-		
-		autoResize();
-	}
-	
-	inline function autoResize()
-	{
-		resizeByTotal(countToolsWithUIButton());
-	}
-	
-	inline function resizeByTotal(total:Int)
-	{
-		final spacing = 25;
-		final padding = 10;
-		final rows = Math.ceil(total / BUTTONS_PER_LINE);
-		final columns = Math.min(total, BUTTONS_PER_LINE);
-		resize(spacing * columns + padding, spacing * rows + padding);
+		resize(25 * Math.min(buttons, buttonsPerLine) + 10, 25 * lines + 10);
 	}
 
 	/**
@@ -399,11 +325,9 @@ class Interaction extends Window
 		{
 			if (member != null && member.scrollFactor != null && member.isOnScreen())
 			{
-				final margin = 0.5;
-				final scroll = FlxG.camera.scroll;
-				// Render a white rectangle centered at the selected item
-				gfx.lineStyle(1.0, 0xFFFFFF, 0.75);
-				gfx.drawRect(member.x - scroll.x - margin, member.y - scroll.y - margin, member.width + margin*2, member.height + margin*2);
+				// Render a red rectangle centered at the selected item
+				gfx.lineStyle(0.9, 0xff0000);
+				gfx.drawRect(member.x - FlxG.camera.scroll.x, member.y - FlxG.camera.scroll.y, member.width * 1.0, member.height * 1.0);
 			}
 		}
 
@@ -423,7 +347,7 @@ class Interaction extends Window
 	public function getTool(className:Class<Tool>):Tool
 	{
 		for (tool in _tools)
-			if (Std.isOfType(tool, className))
+			if (isOfType(tool, className))
 				return tool;
 		return null;
 	}
@@ -608,59 +532,11 @@ class Interaction extends Window
 		return FlxG.debugger.visible && visible && activeTool != null;
 	}
 
-	/**
-	 * Returns a list all items in the state and substate that are within the given area
-	 * 
-	 * @param   state  The state to search
-	 * @param   area   The rectangular area to search
-	 * @since 5.6.0
-	 */
-	public function getItemsWithinState(state:FlxState, area:FlxRect):Array<FlxObject>
+	public function findItemsWithinState(items:Array<FlxBasic>, state:FlxState, area:FlxRect):Void
 	{
-		final items = new Array<FlxObject>();
-		
-		addItemsWithinArea(items, state.members, area);
+		findItemsWithinArea(items, state.members, area);
 		if (state.subState != null)
-			addItemsWithinState(items, state.subState, area);
-		
-		return items;
-	}
-	
-	@:deprecated("findItemsWithinState is deprecated, use getItemsWithinState or addItemsWithinState")
-	public inline function findItemsWithinState(items:Array<FlxBasic>, state:FlxState, area:FlxRect):Void
-	{
-		addItemsWithinState(cast items, state, area);
-	}
-	
-	/**
-	 * finds all items in the state and substate that are within the given area and
-	 * adds them to the given list.
-	 * 
-	 * @param   items  The list to add the items
-	 * @param   state  The state to search
-	 * @param   area   The rectangular area to search
-	 * @since 5.6.0
-	 */
-	public function addItemsWithinState(items:Array<FlxObject>, state:FlxState, area:FlxRect):Void
-	{
-		addItemsWithinArea(items, state.members, area);
-		if (state.subState != null)
-			addItemsWithinState(items, state.subState, area);
-	}
-	
-	/**
-	 * Finds and returns top-most item in the state and substate within the given area
-	 * 
-	 * @param   state  The state to search
-	 * @param   area   The rectangular area to search
-	 * @since 5.6.0
-	 */
-	public function getTopItemWithinState(state:FlxState, area:FlxRect):FlxObject
-	{
-		if (state.subState != null)
-			return getTopItemWithinState(state.subState, area);
-		
-		return getTopItemWithinArea(state.members, area);
+			findItemsWithinState(items, state.subState, area);
 	}
 
 	/**
@@ -669,81 +545,27 @@ class Interaction extends Window
 	 * if an item is within the searching area or not by checking if the item's hitbox (obtained from
 	 * `getHitbox()`) overlaps the area parameter.
 	 *
-	 * @param   items    Array where the method will place all found items. Any previous content in the array will be preserved.
-	 * @param   members  Array where the method will recursively search for items.
-	 * @param   area     A rectangle that describes the area where the method should search within.
-	 */
-	@:deprecated("findItemsWithinArea is deprecated, use addItemsWithinArea")// since 5.6.0
-	public inline function findItemsWithinArea(items:Array<FlxBasic>, members:Array<FlxBasic>, area:FlxRect):Void
-	{
-		addItemsWithinArea(cast items, members, area);
-	}
-	
-	/**
-	 * Find all items within an area. In order to improve performance and reduce temporary allocations,
-	 * the method has no return, you must pass an array where items will be placed. The method decides
-	 * if an item is within the searching area or not by checking if the item's hitbox (obtained from
-	 * `getHitbox()`) overlaps the area parameter.
-	 *
-	 * @param   items    Array where the method will place all found items. Any previous content in the array will be preserved.
-	 * @param   members  Array where the method will recursively search for items.
-	 * @param   area     A rectangle that describes the area where the method should search within.
-	 * @since 5.6.0
-	 */
-	public function addItemsWithinArea(items:Array<FlxObject>, members:Array<FlxBasic>, area:FlxRect):Void
-	{
-		// we iterate backwards to get the sprites on top first
-		var i = members.length;
-		while (i-- > 0)
-		{
-			final member = members[i];
-			// Ignore invisible or non-existent entities
-			if (member == null || !member.visible || !member.exists)
-				continue;
-			
-			final group = FlxTypedGroup.resolveSelectionGroup(member);
-			if (group != null)
-				addItemsWithinArea(items, group.members, area);
-			else if (member is FlxObject)
-			{
-				final object:FlxObject = cast member;
-				if (area.overlaps(object.getHitbox()))
-					items.push(object);
-			}
-		}
-	}
-	
-	/**
-	 * Searches the members for the top-most object inside the given rectangle
-	 * 
-	 * @param   members  The list of FlxObjects or FlxGroups
-	 * @param   area     The rectangular area to search
-	 * @return  The top-most item
-	 * @since 5.6.0
+	 * @param	items		array where the method will place all found items. Any previous content in the array will be preserved.
+	 * @param	members		array where the method will recursively search for items.
+	 * @param	area		a rectangle that describes the area where the method should search within.
 	 */
 	@:access(flixel.group.FlxTypedGroup)
-	public function getTopItemWithinArea(members:Array<FlxBasic>, area:FlxRect):FlxObject
+	public function findItemsWithinArea(items:Array<FlxBasic>, members:Array<FlxBasic>, area:FlxRect):Void
 	{
 		// we iterate backwards to get the sprites on top first
 		var i = members.length;
 		while (i-- > 0)
 		{
-			final member = members[i];
+			var member = members[i];
 			// Ignore invisible or non-existent entities
 			if (member == null || !member.visible || !member.exists)
 				continue;
-			
-			final group = FlxTypedGroup.resolveGroup(member);
+
+			var group = FlxTypedGroup.resolveGroup(member);
 			if (group != null)
-				return getTopItemWithinArea(group.members, area);
-			
-			if (member is FlxObject)
-			{
-				final object:FlxObject = cast member;
-				if (area.overlaps(object.getHitbox()))
-					return object;
-			}
+				findItemsWithinArea(items, group.members, area);
+			else if ((member is FlxSprite) && area.overlaps(cast(member, FlxSprite).getHitbox()))
+				items.push(cast member);
 		}
-		return null;
 	}
 }

@@ -260,10 +260,10 @@ class Console extends Window
 		}
 	}
 
-	override public function reposition(x:Float, y:Float)
+	override public function reposition(X:Float, Y:Float)
 	{
-		super.reposition(x, y);
-		completionList.setY(this.y + Window.HEADER_HEIGHT);
+		super.reposition(X, Y);
+		completionList.setY(y + Window.HEADER_HEIGHT);
 		completionList.close();
 	}
 	#end
@@ -271,137 +271,54 @@ class Console extends Window
 	/**
 	 * Register a new function to use in any command.
 	 *
-	 * @param   alias     The name with which you want to access the function.
-	 * @param   func      The function to register.
-	 * @param   helpText  An optional string to trace to the console using the "help" command.
+	 * @param 	FunctionAlias	The name with which you want to access the function.
+	 * @param 	Function		The function to register.
+	 * @param 	HelpText		An optional string to trace to the console using the "help" command.
 	 */
-	public function registerFunction(alias:String, func:Dynamic, ?helpText:String)
+	public function registerFunction(functionAlias:String, func:Dynamic, ?helpText:String)
 	{
-		registeredFunctions.set(alias, func);
+		registeredFunctions.set(functionAlias, func);
 		#if hscript
-		ConsoleUtil.registerFunction(alias, func);
+		ConsoleUtil.registerFunction(functionAlias, func);
 		#end
 
 		if (helpText != null)
-			registeredHelp.set(alias, helpText);
+			registeredHelp.set(functionAlias, helpText);
 	}
 
 	/**
 	 * Register a new object to use in any command.
 	 *
-	 * @param   alias   The name with which you want to access the object.
-	 * @param   object  The object to register.
+	 * @param 	ObjectAlias		The name with which you want to access the object.
+	 * @param 	AnyObject		The object to register.
 	 */
-	public function registerObject(alias:String, object:Dynamic)
+	public function registerObject(objectAlias:String, anyObject:Dynamic)
 	{
-		registeredObjects.set(alias, object);
+		registeredObjects.set(objectAlias, anyObject);
 		#if hscript
-		ConsoleUtil.registerObject(alias, object);
+		ConsoleUtil.registerObject(objectAlias, anyObject);
 		#end
-	}
-
-	/**
-	 * Removes an object or function from the command registry.
-	 *
-	 * @param   alias  The alias to remove.
-	 * @since 5.4.0
-	 */
-	public function removeByAlias(alias:String)
-	{
-		registeredObjects.remove(alias);
-		registeredFunctions.remove(alias);
-		#if hscript
-		ConsoleUtil.removeByAlias(alias);
-		#end
-	}
-
-	/**
-	 * Removes an object from the command registry by searching through the list.
-	 *
-	 * Note: `removeByAlias` is more performant.
-	 *
-	 * @param   object  The object to remove.
-	 * @since 5.4.0
-	 */
-	public function removeObject(object:Dynamic)
-	{
-		for (alias in registeredObjects.keys())
-		{
-			if (registeredObjects[alias] == object)
-			{
-				registeredObjects.remove(alias);
-				#if hscript
-				ConsoleUtil.removeByAlias(alias);
-				#end
-				break;
-			}
-		}
-	}
-
-	/**
-	 * Removes a function from the command registry by searching through the list.
-	 *
-	 * Note: `removeByAlias` is more performant.
-	 *
-	 * @param   func  The object to remove.
-	 * @since 5.4.0
-	 */
-	public function removeFunction(func:Dynamic)
-	{
-		for (alias in registeredFunctions.keys())
-		{
-			if (registeredFunctions[alias] == func)
-			{
-				registeredFunctions.remove(alias);
-				#if hscript
-				ConsoleUtil.removeByAlias(alias);
-				#end
-				break;
-			}
-		}
 	}
 
 	/**
 	 * Register a new class to use in any command.
 	 *
-	 * @param   c  The class to register.
+	 * @param	cl	The class to register.
 	 */
-	public inline function registerClass(c:Class<Dynamic>)
+	public inline function registerClass(cl:Class<Dynamic>)
 	{
-		registerObject(FlxStringUtil.getClassName(c, true), c);
-	}
-
-	/**
-	 * Removes a class from the command registry.
-	 *
-	 * @param   c  The class to remove.
-	 * @since 5.4.0
-	 */
-	public inline function removeClass(c:Class<Dynamic>)
-	{
-		removeByAlias(FlxStringUtil.getClassName(c, true));
+		registerObject(FlxStringUtil.getClassName(cl, true), cl);
 	}
 
 	/**
 	 * Register a new enum to use in any command.
 	 *
-	 * @param   e  The enum to register.
+	 * @param	e	The enum to register.
 	 * @since 4.4.0
 	 */
 	public inline function registerEnum(e:Enum<Dynamic>)
 	{
 		registerObject(FlxStringUtil.getEnumName(e, true), e);
-	}
-
-	/**
-	 * Removes an enum from the command registry.
-	 *
-	 * @param   e  The enum to remove.
-	 * @since 5.4.0
-	 */
-	public inline function removeEnum(e:Enum<Dynamic>):Void
-	{
-		removeByAlias(FlxStringUtil.getEnumName(e, true));
 	}
 
 	override public function destroy()

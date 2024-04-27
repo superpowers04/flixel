@@ -1,14 +1,13 @@
 package flixel.system.debug;
 
-import openfl.display.BitmapData;
-import openfl.display.Sprite;
-#if FLX_DEBUG
-import openfl.events.MouseEvent;
-import openfl.geom.Point;
-import openfl.geom.Rectangle;
-import openfl.text.TextField;
-import openfl.text.TextFieldAutoSize;
-import openfl.text.TextFormat;
+import flash.display.BitmapData;
+import flash.display.Sprite;
+import flash.events.MouseEvent;
+import flash.geom.Point;
+import flash.geom.Rectangle;
+import flash.text.TextField;
+import flash.text.TextFieldAutoSize;
+import flash.text.TextFormat;
 import openfl.display.DisplayObject;
 import flixel.FlxG;
 import flixel.system.debug.console.Console;
@@ -24,45 +23,45 @@ import flixel.system.ui.FlxSystemButton;
 import flixel.util.FlxHorizontalAlign;
 
 using flixel.util.FlxArrayUtil;
-#end
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/flixel.png") #end
+@:bitmap("assets/images/debugger/flixel.png")
 private class GraphicFlixel extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/drawDebug.png") #end
+@:bitmap("assets/images/debugger/buttons/drawDebug.png")
 private class GraphicDrawDebug extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/log.png") #end
+@:bitmap("assets/images/debugger/buttons/log.png")
 @:noCompletion class GraphicLog extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/stats.png") #end
+@:bitmap("assets/images/debugger/buttons/stats.png")
 @:noCompletion class GraphicStats extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/watch.png") #end
+@:bitmap("assets/images/debugger/buttons/watch.png")
 @:noCompletion class GraphicWatch extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/bitmapLog.png") #end
+@:bitmap("assets/images/debugger/buttons/bitmapLog.png")
 @:noCompletion class GraphicBitmapLog extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/console.png") #end
+@:bitmap("assets/images/debugger/buttons/console.png")
 @:noCompletion class GraphicConsole extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/arrowLeft.png") #end
+@:bitmap("assets/images/debugger/buttons/arrowLeft.png")
 @:noCompletion class GraphicArrowLeft extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/arrowRight.png") #end
+@:bitmap("assets/images/debugger/buttons/arrowRight.png")
 @:noCompletion class GraphicArrowRight extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/close.png") #end
+@:bitmap("assets/images/debugger/buttons/close.png")
 @:noCompletion class GraphicCloseButton extends BitmapData {}
 
-#if FLX_DEBUG @:bitmap("assets/images/debugger/buttons/interactive.png") #end
+@:bitmap("assets/images/debugger/buttons/interactive.png")
 @:noCompletion class GraphicInteractive extends BitmapData {}
+
 /**
  * Container for the new debugger overlay. Most of the functionality is in the debug folder widgets,
  * but this class instantiates the widgets and handles their basic formatting and arrangement.
  */
-class FlxDebugger extends openfl.display.Sprite
+class FlxDebugger extends Sprite
 {
 	#if FLX_DEBUG
 	/**
@@ -125,7 +124,6 @@ class FlxDebugger extends openfl.display.Sprite
 		super();
 
 		visible = false;
-		tabChildren = false;
 
 		Tooltip.init(this);
 
@@ -509,7 +507,7 @@ class FlxDebugger extends openfl.display.Sprite
 
 	inline function openHomepage():Void
 	{
-		FlxG.openURL("http://haxeflixel.com");
+		FlxG.openURL("http://www.haxeflixel.com");
 	}
 
 	inline function openGitHub():Void

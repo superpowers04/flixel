@@ -1,5 +1,6 @@
 package flixel.graphics.tile;
 
+#if FLX_DRAW_QUADS
 import openfl.display.GraphicsShader;
 
 class FlxGraphicsShader extends GraphicsShader
@@ -75,3 +76,4 @@ class FlxGraphicsShader extends GraphicsShader
 		super();
 	}
 }
+#end

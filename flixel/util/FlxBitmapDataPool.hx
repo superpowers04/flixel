@@ -1,7 +1,7 @@
 package flixel.util;
 
-import openfl.display.BitmapData;
-import openfl.geom.Rectangle;
+import flash.display.BitmapData;
+import flash.geom.Rectangle;
 
 /**
  * BitmapData pool class.

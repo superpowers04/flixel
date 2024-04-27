@@ -2,15 +2,11 @@ package flixel;
 
 import flixel.system.FlxBGSprite;
 import flixel.util.FlxColor;
-import flixel.util.FlxDestroyUtil;
 
 /**
  * A `FlxSubState` can be opened inside of a `FlxState`.
  * By default, it also stops the parent state from updating,
  * making it convenient for pause screens or menus.
- * 
- * @see [FlxSubstate snippet](https://snippets.haxeflixel.com/states/flxsubstate/)
- * @see [Substate demo](https://haxeflixel.com/demos/SubState/)
  */
 class FlxSubState extends FlxState
 {
@@ -63,7 +59,7 @@ class FlxSubState extends FlxState
 		// Draw background
 		if (FlxG.renderBlit)
 		{
-			for (camera in getCamerasLegacy())
+			for (camera in cameras)
 			{
 				camera.fill(bgColor);
 			}
@@ -83,7 +79,7 @@ class FlxSubState extends FlxState
 		closeCallback = null;
 		openCallback = null;
 		_parentState = null;
-		_bgSprite = FlxDestroyUtil.destroy(_bgSprite);
+		_bgSprite = null;
 	}
 
 	/**
